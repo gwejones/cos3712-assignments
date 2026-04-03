@@ -72,6 +72,7 @@ This project is structured for GitHub Pages:
 
 - Publish from `main` branch
 - Folder: repository root (`/`)
+- Live URL: `https://gwejones.github.io/cos3712-assignments/`
 
 That means `index.html` is kept at the repository root and static assets are loaded via relative paths.
 
