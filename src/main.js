@@ -32,6 +32,14 @@ const stationRoot = new THREE.Group();
 scene.add(stationRoot);
 
 const modelLoader = new GLTFLoader();
+modelLoader.register(() => ({
+  name: "ForceFlatShading",
+  extendMaterialParams(_materialIndex, materialParams) {
+    materialParams.flatShading = true;
+    return Promise.resolve();
+  }
+}));
+
 modelLoader.load(
   "./assets/models/station.glb",
   (gltf) => {
