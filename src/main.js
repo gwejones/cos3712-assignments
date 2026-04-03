@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const app = document.getElementById("app");
 if (!(app instanceof HTMLDivElement)) {
@@ -27,14 +28,20 @@ const sun = new THREE.DirectionalLight(0xffffff, 1.0);
 sun.position.set(6, 8, 4);
 scene.add(sun);
 
-const station = new THREE.Group();
-scene.add(station);
+const stationRoot = new THREE.Group();
+scene.add(stationRoot);
 
-const stationCube = new THREE.Mesh(
-  new THREE.BoxGeometry(1.8, 1.8, 1.8),
-  new THREE.MeshStandardMaterial({ color: 0x8d98ad, metalness: 0.5, roughness: 0.45 })
+const modelLoader = new GLTFLoader();
+modelLoader.load(
+  "./assets/models/station.glb",
+  (gltf) => {
+    stationRoot.add(gltf.scene);
+  },
+  undefined,
+  (error) => {
+    console.error("Could not load ./assets/models/station.glb.", error);
+  }
 );
-station.add(stationCube);
 
 const clock = new THREE.Clock();
 
@@ -42,7 +49,7 @@ function animate() {
   requestAnimationFrame(animate);
 
   const t = clock.getElapsedTime();
-  station.rotation.y = t * 0.1;
+  stationRoot.rotation.y = t * 0.1;
 
   renderer.render(scene, camera);
 }
