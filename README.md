@@ -75,6 +75,21 @@ This project is structured for GitHub Pages:
 
 That means `index.html` is kept at the repository root and static assets are loaded via relative paths.
 
+## Run Locally
+
+Do not open `index.html` directly via `file://...` in the browser.  
+This project uses JavaScript modules, which should be served over HTTP.
+
+From the repository root, run:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then open:
+
+- `http://localhost:8000/`
+
 ## Repository Structure
 
 - `index.html` - site entry point for GitHub Pages
