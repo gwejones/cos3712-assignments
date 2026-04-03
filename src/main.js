@@ -51,13 +51,15 @@ modelLoader.load(
   }
 );
 
-const clock = new THREE.Clock();
+const timer = new THREE.Timer();
+timer.connect(document);
 
-function animate() {
+function animate(timestamp) {
   requestAnimationFrame(animate);
+  timer.update(timestamp);
 
-  const t = clock.getElapsedTime();
-  stationRoot.rotation.y = t * 0.1;
+  const t = timer.getElapsed();
+  stationRoot.rotation.y = t * 0.02;
 
   renderer.render(scene, camera);
 }
@@ -70,4 +72,8 @@ window.addEventListener("resize", () => {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
+});
+
+window.addEventListener("beforeunload", () => {
+  timer.dispose();
 });
