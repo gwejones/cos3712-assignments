@@ -23,12 +23,20 @@ const zoomStep = 0.8;
 const moveStep = 0.8;
 const minPitch = THREE.MathUtils.degToRad(-89);
 const maxPitch = THREE.MathUtils.degToRad(89);
+const worldUp = new THREE.Vector3(0, 1, 0);
 const cameraForward = new THREE.Vector3();
 const cameraRight = new THREE.Vector3();
-let cameraYaw = 0;
-let cameraPitch = 0;
+const targetCameraPosition = new THREE.Vector3();
+const targetCameraQuaternion = new THREE.Quaternion();
+const targetCameraEuler = new THREE.Euler(0, 0, 0, "YXZ");
+let targetCameraYaw = 0;
+let targetCameraPitch = 0;
+const cameraPositionSmoothing = 10;
+const cameraRotationSmoothing = 14;
+const cameraPositionSnapEpsilonSq = 0.000001;
+const cameraRotationSnapDotEpsilon = 0.000001;
 camera.rotation.order = "YXZ";
-setCameraView(defaultCameraPosition, defaultLookAtTarget);
+setCameraView(defaultCameraPosition, defaultLookAtTarget, true);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -231,6 +239,7 @@ function animate(timestamp) {
     ship.orbitNode.lookAt(orbitLookAhead);
   }
 
+  updateCameraTransform(deltaSeconds);
   renderer.render(scene, camera);
 }
 
@@ -258,38 +267,71 @@ function computeOrbitalPosition(theta, radius, inclination, target) {
   );
 }
 
-function setCameraView(position, target) {
-  camera.position.copy(position);
-  camera.lookAt(target);
-  cameraYaw = camera.rotation.y;
-  cameraPitch = camera.rotation.x;
-  applyCameraRotation();
+function setCameraView(position, target, immediate = false) {
+  targetCameraPosition.copy(position);
+
+  cameraForward.copy(target).sub(position);
+  if (cameraForward.lengthSq() > 0) {
+    cameraForward.normalize();
+    targetCameraPitch = THREE.MathUtils.clamp(
+      Math.asin(THREE.MathUtils.clamp(cameraForward.y, -1, 1)),
+      minPitch,
+      maxPitch
+    );
+    targetCameraYaw = Math.atan2(-cameraForward.x, -cameraForward.z);
+    updateTargetCameraQuaternion();
+  }
+
+  if (immediate) {
+    camera.position.copy(targetCameraPosition);
+    camera.quaternion.copy(targetCameraQuaternion);
+  }
 }
 
 function rotateCamera(yawDelta, pitchDelta) {
-  cameraYaw += yawDelta;
-  cameraPitch = THREE.MathUtils.clamp(cameraPitch + pitchDelta, minPitch, maxPitch);
-  applyCameraRotation();
-}
-
-function applyCameraRotation() {
-  camera.rotation.set(cameraPitch, cameraYaw, 0, "YXZ");
+  targetCameraYaw += yawDelta;
+  targetCameraPitch = THREE.MathUtils.clamp(targetCameraPitch + pitchDelta, minPitch, maxPitch);
+  updateTargetCameraQuaternion();
 }
 
 function moveCamera(rightDelta, upDelta, forwardDelta) {
   if (rightDelta !== 0 || forwardDelta !== 0) {
-    camera.getWorldDirection(cameraForward);
-    cameraRight.crossVectors(cameraForward, camera.up).normalize();
+    cameraForward.set(0, 0, -1).applyQuaternion(targetCameraQuaternion).normalize();
+    cameraRight.crossVectors(cameraForward, worldUp).normalize();
   }
 
   if (rightDelta !== 0) {
-    camera.position.addScaledVector(cameraRight, rightDelta);
+    targetCameraPosition.addScaledVector(cameraRight, rightDelta);
   }
   if (upDelta !== 0) {
-    camera.position.addScaledVector(camera.up, upDelta);
+    targetCameraPosition.addScaledVector(worldUp, upDelta);
   }
   if (forwardDelta !== 0) {
-    camera.position.addScaledVector(cameraForward, forwardDelta);
+    targetCameraPosition.addScaledVector(cameraForward, forwardDelta);
+  }
+}
+
+function updateTargetCameraQuaternion() {
+  targetCameraEuler.set(targetCameraPitch, targetCameraYaw, 0, "YXZ");
+  targetCameraQuaternion.setFromEuler(targetCameraEuler);
+}
+
+function updateCameraTransform(deltaSeconds) {
+  const positionAlpha = 1 - Math.exp(-cameraPositionSmoothing * deltaSeconds);
+  const rotationAlpha = 1 - Math.exp(-cameraRotationSmoothing * deltaSeconds);
+
+  if (positionAlpha > 0) {
+    camera.position.lerp(targetCameraPosition, positionAlpha);
+  }
+  if (rotationAlpha > 0) {
+    camera.quaternion.slerp(targetCameraQuaternion, rotationAlpha);
+  }
+
+  if (camera.position.distanceToSquared(targetCameraPosition) <= cameraPositionSnapEpsilonSq) {
+    camera.position.copy(targetCameraPosition);
+  }
+  if (1 - Math.abs(camera.quaternion.dot(targetCameraQuaternion)) <= cameraRotationSnapDotEpsilon) {
+    camera.quaternion.copy(targetCameraQuaternion);
   }
 }
 
