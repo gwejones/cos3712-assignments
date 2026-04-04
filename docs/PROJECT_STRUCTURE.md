@@ -2,17 +2,36 @@
 
 Deployment target: GitHub Pages from the `main` branch root (`/`).
 
-## Baseline Layout
+## Current Layout
 
-- `index.html` - static site entry point (must be at repository root)
-- `assets/blender/` - Blender working files (`.blend`)
-- `assets/models/` - runtime-ready exported models (`.glb`)
-- `src/` - JavaScript/Three.js source code
-- `docs/` - assignment notes and submission documentation (not site root)
+- `index.html` - static app entry point and control-overlay markup/styles
+- `src/main.js` - Three.js scene setup, animation loop, and camera/control logic
+- `assets/models/` - runtime models loaded by the app (`ship.glb`, `station.glb`)
+- `assets/blender/` - Blender working/source files for modeling edits (`ship.blend`, `station.blend`)
+- `assets/icons/controls/` - SVG icons used by control buttons, plus icon-source/license notes
+- `docs/` - project documentation (`COLOR_PALLETE.md`, this file, and related notes)
 
-## Asset Naming Convention
+## Key Runtime Paths (Stable)
 
-- Blender working file path: `assets/blender/station.blend`
-- Exported runtime model path: `assets/models/station.glb`
+- `index.html`
+- `src/main.js`
+- `assets/models/station.glb`
+- `assets/models/ship.glb`
+- `assets/icons/controls/*.svg`
 
-These two paths should remain stable so loaders, scripts, and documentation stay consistent.
+These paths should remain stable because they are referenced directly by the app.
+
+## Modeling Source Of Truth
+
+- Station source model: `assets/blender/station.blend`
+- Ship source model: `assets/blender/ship.blend`
+
+Runtime `.glb` files in `assets/models/` are exports for the web app.  
+When Blender geometry/material edits are made, re-export matching `.glb` files.
+
+## Controls Icon Assets
+
+- Icon SVG directory: `assets/icons/controls/`
+- Icon mapping + licensing notes: `assets/icons/controls/README.md`
+
+The control overlay in `index.html` uses these local SVG files directly via relative links.
