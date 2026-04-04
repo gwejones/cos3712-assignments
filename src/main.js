@@ -9,8 +9,9 @@ if (!(app instanceof HTMLDivElement)) {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 
+const defaultCameraFov = 60;
 const camera = new THREE.PerspectiveCamera(
-  60,
+  defaultCameraFov,
   app.clientWidth / app.clientHeight,
   0.1,
   100
@@ -19,10 +20,12 @@ const defaultLookAtTarget = new THREE.Vector3(0, 0, 0);
 const defaultCameraPosition = new THREE.Vector3(0, 2, 8);
 const yawStep = THREE.MathUtils.degToRad(8);
 const pitchStep = THREE.MathUtils.degToRad(6);
-const zoomStep = 0.8;
+const zoomStep = 4;
 const moveStep = 0.8;
 const minPitch = THREE.MathUtils.degToRad(-89);
 const maxPitch = THREE.MathUtils.degToRad(89);
+const minCameraFov = 20;
+const maxCameraFov = 90;
 const worldUp = new THREE.Vector3(0, 1, 0);
 const cameraForward = new THREE.Vector3();
 const cameraRight = new THREE.Vector3();
@@ -33,8 +36,11 @@ let targetCameraYaw = 0;
 let targetCameraPitch = 0;
 const cameraPositionSmoothing = 10;
 const cameraRotationSmoothing = 14;
+const cameraFovSmoothing = 14;
 const cameraPositionSnapEpsilonSq = 0.000001;
 const cameraRotationSnapDotEpsilon = 0.000001;
+const cameraFovSnapEpsilon = 0.001;
+let targetCameraFov = defaultCameraFov;
 camera.rotation.order = "YXZ";
 setCameraView(defaultCameraPosition, defaultLookAtTarget, true);
 
@@ -82,6 +88,7 @@ if (toggleOrbitButton instanceof HTMLButtonElement) {
 if (resetCameraButton instanceof HTMLButtonElement) {
   resetCameraButton.addEventListener("click", () => {
     setCameraView(defaultCameraPosition, defaultLookAtTarget);
+    setTargetCameraFov(defaultCameraFov);
   });
 }
 if (panLeftButton instanceof HTMLButtonElement) {
@@ -106,12 +113,12 @@ if (tiltDownButton instanceof HTMLButtonElement) {
 }
 if (zoomInButton instanceof HTMLButtonElement) {
   zoomInButton.addEventListener("click", () => {
-    moveCamera(0, 0, zoomStep);
+    zoomCamera(-zoomStep);
   });
 }
 if (zoomOutButton instanceof HTMLButtonElement) {
   zoomOutButton.addEventListener("click", () => {
-    moveCamera(0, 0, -zoomStep);
+    zoomCamera(zoomStep);
   });
 }
 if (moveLeftButton instanceof HTMLButtonElement) {
@@ -311,14 +318,24 @@ function moveCamera(rightDelta, upDelta, forwardDelta) {
   }
 }
 
+function zoomCamera(fovDelta) {
+  setTargetCameraFov(targetCameraFov + fovDelta);
+}
+
+function setTargetCameraFov(nextFov) {
+  targetCameraFov = THREE.MathUtils.clamp(nextFov, minCameraFov, maxCameraFov);
+}
+
 function updateTargetCameraQuaternion() {
   targetCameraEuler.set(targetCameraPitch, targetCameraYaw, 0, "YXZ");
   targetCameraQuaternion.setFromEuler(targetCameraEuler);
 }
 
 function updateCameraTransform(deltaSeconds) {
+  const previousFov = camera.fov;
   const positionAlpha = 1 - Math.exp(-cameraPositionSmoothing * deltaSeconds);
   const rotationAlpha = 1 - Math.exp(-cameraRotationSmoothing * deltaSeconds);
+  const fovAlpha = 1 - Math.exp(-cameraFovSmoothing * deltaSeconds);
 
   if (positionAlpha > 0) {
     camera.position.lerp(targetCameraPosition, positionAlpha);
@@ -326,12 +343,21 @@ function updateCameraTransform(deltaSeconds) {
   if (rotationAlpha > 0) {
     camera.quaternion.slerp(targetCameraQuaternion, rotationAlpha);
   }
+  if (fovAlpha > 0) {
+    camera.fov = THREE.MathUtils.lerp(camera.fov, targetCameraFov, fovAlpha);
+  }
 
   if (camera.position.distanceToSquared(targetCameraPosition) <= cameraPositionSnapEpsilonSq) {
     camera.position.copy(targetCameraPosition);
   }
   if (1 - Math.abs(camera.quaternion.dot(targetCameraQuaternion)) <= cameraRotationSnapDotEpsilon) {
     camera.quaternion.copy(targetCameraQuaternion);
+  }
+  if (Math.abs(camera.fov - targetCameraFov) <= cameraFovSnapEpsilon) {
+    camera.fov = targetCameraFov;
+  }
+  if (Math.abs(camera.fov - previousFov) > 0) {
+    camera.updateProjectionMatrix();
   }
 }
 
