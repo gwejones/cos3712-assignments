@@ -58,12 +58,17 @@ const moveLeftButton = document.getElementById("move-left");
 const moveRightButton = document.getElementById("move-right");
 const moveUpButton = document.getElementById("move-up");
 const moveDownButton = document.getElementById("move-down");
+const toggleOrbitIcon = document.getElementById("toggle-orbit-icon");
+
+const pauseOrbitIconSrc = "./assets/icons/controls/pause-orbit.svg";
+const resumeOrbitIconSrc = "./assets/icons/controls/resume-orbit.svg";
 
 let orbitIsRunning = true;
 if (toggleOrbitButton instanceof HTMLButtonElement) {
+  syncOrbitToggleButton();
   toggleOrbitButton.addEventListener("click", () => {
     orbitIsRunning = !orbitIsRunning;
-    toggleOrbitButton.textContent = orbitIsRunning ? "Pause Orbit" : "Resume Orbit";
+    syncOrbitToggleButton();
   });
 }
 if (resetCameraButton instanceof HTMLButtonElement) {
@@ -285,5 +290,19 @@ function moveCamera(rightDelta, upDelta, forwardDelta) {
   }
   if (forwardDelta !== 0) {
     camera.position.addScaledVector(cameraForward, forwardDelta);
+  }
+}
+
+function syncOrbitToggleButton() {
+  if (!(toggleOrbitButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const label = orbitIsRunning ? "Pause Orbit" : "Resume Orbit";
+  toggleOrbitButton.setAttribute("aria-label", label);
+  toggleOrbitButton.title = label;
+
+  if (toggleOrbitIcon instanceof HTMLImageElement) {
+    toggleOrbitIcon.src = orbitIsRunning ? pauseOrbitIconSrc : resumeOrbitIconSrc;
   }
 }

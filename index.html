@@ -73,6 +73,14 @@
         cursor: pointer;
       }
 
+      .control-icon {
+        width: 24px;
+        height: 24px;
+        display: block;
+        pointer-events: none;
+        filter: brightness(0) invert(1);
+      }
+
     </style>
   </head>
   <body>
@@ -81,18 +89,42 @@
       <p>50052578 Jones GWE</p>
     </div>
     <div id="controls-overlay" aria-label="Scene controls">
-      <button id="reset-camera" class="control-button" type="button">Reset Camera</button>
-      <button id="zoom-in" class="control-button" type="button">Zoom In</button>
-      <button id="zoom-out" class="control-button" type="button">Zoom Out</button>
-      <button id="move-left" class="control-button" type="button">Move Left</button>
-      <button id="move-right" class="control-button" type="button">Move Right</button>
-      <button id="move-up" class="control-button" type="button">Move Up</button>
-      <button id="move-down" class="control-button" type="button">Move Down</button>
-      <button id="pan-left" class="control-button" type="button">Pan Left</button>
-      <button id="pan-right" class="control-button" type="button">Pan Right</button>
-      <button id="tilt-up" class="control-button" type="button">Tilt Up</button>
-      <button id="tilt-down" class="control-button" type="button">Tilt Down</button>
-      <button id="toggle-orbit" class="control-button" type="button">Pause Orbit</button>
+      <button id="reset-camera" class="control-button" type="button" aria-label="Reset Camera" title="Reset Camera">
+        <img class="control-icon" src="./assets/icons/controls/reset-camera.svg" alt="" />
+      </button>
+      <button id="zoom-in" class="control-button" type="button" aria-label="Zoom In" title="Zoom In">
+        <img class="control-icon" src="./assets/icons/controls/zoom-in.svg" alt="" />
+      </button>
+      <button id="zoom-out" class="control-button" type="button" aria-label="Zoom Out" title="Zoom Out">
+        <img class="control-icon" src="./assets/icons/controls/zoom-out.svg" alt="" />
+      </button>
+      <button id="move-left" class="control-button" type="button" aria-label="Move Left" title="Move Left">
+        <img class="control-icon" src="./assets/icons/controls/move-left.svg" alt="" />
+      </button>
+      <button id="move-right" class="control-button" type="button" aria-label="Move Right" title="Move Right">
+        <img class="control-icon" src="./assets/icons/controls/move-right.svg" alt="" />
+      </button>
+      <button id="move-up" class="control-button" type="button" aria-label="Move Up" title="Move Up">
+        <img class="control-icon" src="./assets/icons/controls/move-up.svg" alt="" />
+      </button>
+      <button id="move-down" class="control-button" type="button" aria-label="Move Down" title="Move Down">
+        <img class="control-icon" src="./assets/icons/controls/move-down.svg" alt="" />
+      </button>
+      <button id="pan-left" class="control-button" type="button" aria-label="Pan Left" title="Pan Left">
+        <img class="control-icon" src="./assets/icons/controls/pan-left.svg" alt="" />
+      </button>
+      <button id="pan-right" class="control-button" type="button" aria-label="Pan Right" title="Pan Right">
+        <img class="control-icon" src="./assets/icons/controls/pan-right.svg" alt="" />
+      </button>
+      <button id="tilt-up" class="control-button" type="button" aria-label="Tilt Up" title="Tilt Up">
+        <img class="control-icon" src="./assets/icons/controls/tilt-up.svg" alt="" />
+      </button>
+      <button id="tilt-down" class="control-button" type="button" aria-label="Tilt Down" title="Tilt Down">
+        <img class="control-icon" src="./assets/icons/controls/tilt-down.svg" alt="" />
+      </button>
+      <button id="toggle-orbit" class="control-button" type="button" aria-label="Pause Orbit" title="Pause Orbit">
+        <img id="toggle-orbit-icon" class="control-icon" src="./assets/icons/controls/pause-orbit.svg" alt="" />
+      </button>
     </div>
     <div id="app"></div>
     <script type="importmap">
