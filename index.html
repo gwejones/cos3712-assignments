@@ -52,12 +52,12 @@
         z-index: 20;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
       }
 
       .control-button {
-        width: 80px;
-        height: 80px;
+        width: 52px;
+        height: 52px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -67,9 +67,9 @@
         padding: 0;
         background: #2a2f36;
         color: #fff;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: 600;
-        line-height: 1.1;
+        line-height: 1.05;
         cursor: pointer;
       }
 
@@ -81,8 +81,18 @@
       <p>50052578 Jones GWE</p>
     </div>
     <div id="controls-overlay" aria-label="Scene controls">
-      <button id="toggle-orbit" class="control-button" type="button">Pause Orbit</button>
       <button id="reset-camera" class="control-button" type="button">Reset Camera</button>
+      <button id="zoom-in" class="control-button" type="button">Zoom In</button>
+      <button id="zoom-out" class="control-button" type="button">Zoom Out</button>
+      <button id="move-left" class="control-button" type="button">Move Left</button>
+      <button id="move-right" class="control-button" type="button">Move Right</button>
+      <button id="move-up" class="control-button" type="button">Move Up</button>
+      <button id="move-down" class="control-button" type="button">Move Down</button>
+      <button id="pan-left" class="control-button" type="button">Pan Left</button>
+      <button id="pan-right" class="control-button" type="button">Pan Right</button>
+      <button id="tilt-up" class="control-button" type="button">Tilt Up</button>
+      <button id="tilt-down" class="control-button" type="button">Tilt Down</button>
+      <button id="toggle-orbit" class="control-button" type="button">Pause Orbit</button>
     </div>
     <div id="app"></div>
     <script type="importmap">

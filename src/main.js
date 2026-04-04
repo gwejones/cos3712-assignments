@@ -15,10 +15,20 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-const lookAtTarget = new THREE.Vector3(0, 0, 0);
-const defaultCameraPosition = new THREE.Vector3(5, 3, 7);
-camera.position.copy(defaultCameraPosition);
-camera.lookAt(lookAtTarget);
+const defaultLookAtTarget = new THREE.Vector3(0, 0, 0);
+const defaultCameraPosition = new THREE.Vector3(0, 2, 8);
+const yawStep = THREE.MathUtils.degToRad(8);
+const pitchStep = THREE.MathUtils.degToRad(6);
+const zoomStep = 0.8;
+const moveStep = 0.8;
+const minPitch = THREE.MathUtils.degToRad(-89);
+const maxPitch = THREE.MathUtils.degToRad(89);
+const cameraForward = new THREE.Vector3();
+const cameraRight = new THREE.Vector3();
+let cameraYaw = 0;
+let cameraPitch = 0;
+camera.rotation.order = "YXZ";
+setCameraView(defaultCameraPosition, defaultLookAtTarget);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -38,6 +48,16 @@ scene.add(shipsRoot);
 
 const toggleOrbitButton = document.getElementById("toggle-orbit");
 const resetCameraButton = document.getElementById("reset-camera");
+const panLeftButton = document.getElementById("pan-left");
+const panRightButton = document.getElementById("pan-right");
+const tiltUpButton = document.getElementById("tilt-up");
+const tiltDownButton = document.getElementById("tilt-down");
+const zoomInButton = document.getElementById("zoom-in");
+const zoomOutButton = document.getElementById("zoom-out");
+const moveLeftButton = document.getElementById("move-left");
+const moveRightButton = document.getElementById("move-right");
+const moveUpButton = document.getElementById("move-up");
+const moveDownButton = document.getElementById("move-down");
 
 let orbitIsRunning = true;
 if (toggleOrbitButton instanceof HTMLButtonElement) {
@@ -48,7 +68,57 @@ if (toggleOrbitButton instanceof HTMLButtonElement) {
 }
 if (resetCameraButton instanceof HTMLButtonElement) {
   resetCameraButton.addEventListener("click", () => {
-    setCameraView(defaultCameraPosition);
+    setCameraView(defaultCameraPosition, defaultLookAtTarget);
+  });
+}
+if (panLeftButton instanceof HTMLButtonElement) {
+  panLeftButton.addEventListener("click", () => {
+    rotateCamera(yawStep, 0);
+  });
+}
+if (panRightButton instanceof HTMLButtonElement) {
+  panRightButton.addEventListener("click", () => {
+    rotateCamera(-yawStep, 0);
+  });
+}
+if (tiltUpButton instanceof HTMLButtonElement) {
+  tiltUpButton.addEventListener("click", () => {
+    rotateCamera(0, pitchStep);
+  });
+}
+if (tiltDownButton instanceof HTMLButtonElement) {
+  tiltDownButton.addEventListener("click", () => {
+    rotateCamera(0, -pitchStep);
+  });
+}
+if (zoomInButton instanceof HTMLButtonElement) {
+  zoomInButton.addEventListener("click", () => {
+    moveCamera(0, 0, zoomStep);
+  });
+}
+if (zoomOutButton instanceof HTMLButtonElement) {
+  zoomOutButton.addEventListener("click", () => {
+    moveCamera(0, 0, -zoomStep);
+  });
+}
+if (moveLeftButton instanceof HTMLButtonElement) {
+  moveLeftButton.addEventListener("click", () => {
+    moveCamera(-moveStep, 0, 0);
+  });
+}
+if (moveRightButton instanceof HTMLButtonElement) {
+  moveRightButton.addEventListener("click", () => {
+    moveCamera(moveStep, 0, 0);
+  });
+}
+if (moveUpButton instanceof HTMLButtonElement) {
+  moveUpButton.addEventListener("click", () => {
+    moveCamera(0, moveStep, 0);
+  });
+}
+if (moveDownButton instanceof HTMLButtonElement) {
+  moveDownButton.addEventListener("click", () => {
+    moveCamera(0, -moveStep, 0);
   });
 }
 
@@ -183,7 +253,37 @@ function computeOrbitalPosition(theta, radius, inclination, target) {
   );
 }
 
-function setCameraView(position) {
+function setCameraView(position, target) {
   camera.position.copy(position);
-  camera.lookAt(lookAtTarget);
+  camera.lookAt(target);
+  cameraYaw = camera.rotation.y;
+  cameraPitch = camera.rotation.x;
+  applyCameraRotation();
+}
+
+function rotateCamera(yawDelta, pitchDelta) {
+  cameraYaw += yawDelta;
+  cameraPitch = THREE.MathUtils.clamp(cameraPitch + pitchDelta, minPitch, maxPitch);
+  applyCameraRotation();
+}
+
+function applyCameraRotation() {
+  camera.rotation.set(cameraPitch, cameraYaw, 0, "YXZ");
+}
+
+function moveCamera(rightDelta, upDelta, forwardDelta) {
+  if (rightDelta !== 0 || forwardDelta !== 0) {
+    camera.getWorldDirection(cameraForward);
+    cameraRight.crossVectors(cameraForward, camera.up).normalize();
+  }
+
+  if (rightDelta !== 0) {
+    camera.position.addScaledVector(cameraRight, rightDelta);
+  }
+  if (upDelta !== 0) {
+    camera.position.addScaledVector(camera.up, upDelta);
+  }
+  if (forwardDelta !== 0) {
+    camera.position.addScaledVector(cameraForward, forwardDelta);
+  }
 }
