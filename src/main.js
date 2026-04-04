@@ -19,7 +19,6 @@ const camera = new THREE.PerspectiveCamera(
 const defaultLookAtTarget = new THREE.Vector3(0, 0, 0);
 const defaultCameraPosition = new THREE.Vector3(0, 2, 8);
 const shipViewOffset = new THREE.Vector3(0, 0.8, -1);
-const shipViewFov = 60;
 const yawStep = THREE.MathUtils.degToRad(8);
 const pitchStep = THREE.MathUtils.degToRad(6);
 const zoomStep = 4;
@@ -455,7 +454,7 @@ function setShipViewTarget() {
   targetCameraPitch = THREE.MathUtils.clamp(targetCameraEuler.x, minPitch, maxPitch);
   targetCameraYaw = targetCameraEuler.y;
   updateTargetCameraQuaternion();
-  setTargetCameraFov(shipViewFov);
+  setTargetCameraFov(defaultCameraFov);
 }
 
 function updateTargetCameraQuaternion() {
