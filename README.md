@@ -1,70 +1,128 @@
 # COS3712 Interactive 3D Space Station (Part 1)
 
-This repository is for **Assessment 2 - Part 1** of the COS3712 space station project.
-It focuses on building and animating an interactive 3D space station using a JavaScript/WebGL stack (Three.js) with Blender-produced assets.
+Student: 50052578 Jones GWE
 
-## Scope
+This repository contains Assessment 2, Part 1 for COS3712: an interactive 3D space station built with Three.js and Blender assets.
 
-Part 1 covers:
-
-- Space station construction using primitives
-- Object animation (station components and spacecraft)
-- Perspective projection
-- Camera navigation and user controls
-
-## Part 1 Objectives
+## Objectives
 
 - Build a 3D space station using primitives.
 - Animate spacecraft and rotating components.
 - Implement full camera navigation.
 - Use perspective projection.
 
-## Mandatory Implementation Requirements (Part 1)
+## Project Scope
 
-### 1) Space Station Structure
+Part 1 implementation includes:
 
-- Central core using cylinders or spheres
-- Minimum **6** docking modules
-- Minimum **4** solar panel arrays
-- Minimum **2** communication towers
-- Station must rotate slowly in space
-- Must demonstrate scaling, rotation, and translation
-
-### 2) Spacecraft and Animation
-
-- Minimum **4** spacecraft following defined orbital paths
-- Smooth continuous movement using translation and rotation
-- Controls to pause/resume all ships simultaneously
-
-### 3) Camera and User Controls
-
-- Free camera movement: forward/backward, left/right, up/down
-- Zoom in/out
-- Switch between external orbit view and first-person docking view
-- Camera movement must be smooth
-
-## Submission Requirements (Part 1)
-
-- Zip folder containing all source code
-- Documentation (PDF or video) including proof of compilation
-- Proof of working animations (screenshots or video)
-- Explanation of how to use camera and user controls
-- Explanation of incomplete features (if any)
-
-Failure to submit documentation results in a mark of zero.
-
-## Part 1 Rubric Weighting (Part A)
-
-- Station Layout and Structure: **35%**
-- Animated Objects: **25%**
-- Camera Movement and Control: **30%**
-- Documentation and Explanation: **10%**
+- Space station model built from primitive-based Blender geometry
+- Multiple orbiting spacecraft with continuous animation
+- Perspective camera with free movement controls
+- First-person ship camera view cycling
+- Smooth camera transitions (position, orientation, and FOV interpolation)
 
 ## Technical Stack
 
-- JavaScript + WebGL (`three.js`)
-- Blender for modelling
-- Export final runtime model(s) as `.glb`
+- JavaScript (ES modules)
+- Three.js v0.183.2
+- Blender for modeling and `.glb` export
+
+## Run Locally
+
+Do not open `index.html` directly via `file://...`, because this project uses JavaScript ES modules and browser security rules block module/import-map loading reliably from local file URLs.
+
+From the repository root:
+
+```bash
+python3 -m http.server 8000
+```
+
+Open:
+
+- `http://localhost:8000/`
+
+## Control Guide
+
+Controls are rendered as a right-side vertical overlay in `index.html`.
+
+| Control | Action | Available In |
+| --- | --- | --- |
+| `Reset Camera` | Returns to default external view | Free + FP |
+| `Switch Camera` | Cycles: free view -> ship 1 FP -> ship 2 FP -> ... -> free view | Free + FP |
+| `Zoom In`, `Zoom Out` | Changes camera FOV (zoom behavior) | Free view only |
+| `Move Left`, `Move Right` | Lateral camera movement | Free view only |
+| `Move Up`, `Move Down` | Vertical camera movement | Free view only |
+| `Move Forward`, `Move Backward` | Longitudinal camera movement | Free view only |
+| `Pan Left`, `Pan Right` | Yaw camera | Free view only |
+| `Tilt Up`, `Tilt Down` | Pitch camera | Free view only |
+| `Pause Orbit` / `Resume Orbit` | Pause/resume ship orbits | Free + FP |
+
+## Camera Behavior Notes
+
+- Free camera and first-person camera are separate view states.
+- First-person orientation is aligned to ship travel direction with axis correction for camera forward (`-Z`) vs object forward (`+Z`).
+- When returning to free view, prior free-view camera state is restored.
+
+## Documentation Evidence
+
+To verify all required functionailty, see the deployed live project at https://gwejones.github.io/cos3712-assignments/.
+
+### Proof of successful local run / compilation context
+
+- `[PLACEHOLDER] Screenshot of terminal running: python3 -m http.server 8000`
+- `[PLACEHOLDER] Screenshot of app running at http://localhost:8000/`
+
+### Station structure proof
+
+- `[PLACEHOLDER] External view showing full station layout`
+- `[PLACEHOLDER] Close-up showing docking modules`
+- `[PLACEHOLDER] Close-up showing solar arrays and communication towers`
+
+### Animation proof
+
+- `[PLACEHOLDER] Frame or sequence showing station rotation`
+- `[PLACEHOLDER] Frame or sequence showing at least four orbiting ships`
+- `[PLACEHOLDER] Before/after or sequence showing Pause Orbit and Resume Orbit`
+
+### Camera and controls proof
+
+- `[PLACEHOLDER] Free camera movement (move/pan/tilt)`
+- `[PLACEHOLDER] Zoom in/out behavior`
+- `[PLACEHOLDER] Switch Camera in free view`
+- `[PLACEHOLDER] First-person ship view`
+- `[PLACEHOLDER] Reset Camera returning to default`
+
+## Third-Party Assets and Licenses
+
+- Three.js: MIT License
+- Google Material Symbols SVG icons used for controls: Apache License 2.0
+  - Source: `https://fonts.google.com/icons`
+  - License reference: `https://www.apache.org/licenses/LICENSE-2.0`
+  - Local icon mapping and references: `assets/icons/controls/README.md`
+
+## Export This README to PDF
+
+This section generates a PDF from `README.md`.
+
+### Prerequisites
+
+Install:
+
+- `pandoc`
+- `texlive`
+
+### Generate PDF
+
+From repository root:
+
+```bash
+pandoc README.md \
+  --from gfm \
+  --toc \
+  --number-sections \
+  --standalone \
+  -o docs/COS3712_Part1_Documentation.pdf
+```
 
 ## Deployment
 
@@ -74,36 +132,15 @@ This project is structured for GitHub Pages:
 - Folder: repository root (`/`)
 - Live URL: `https://gwejones.github.io/cos3712-assignments/`
 
-That means `index.html` is kept at the repository root and static assets are loaded via relative paths.
-
-## Run Locally
-
-Do not open `index.html` directly via `file://...` in the browser.  
-This project uses JavaScript modules, which should be served over HTTP.
-
-From the repository root, run:
-
-```bash
-python3 -m http.server 8000
-```
-
-Then open:
-
-- `http://localhost:8000/`
-
 ## Repository Structure
 
-- `index.html` - site entry point for GitHub Pages
-- `assets/blender/` - Blender working files (`.blend`)
-- `assets/models/` - runtime exported models (`.glb`)
-- `src/` - application source code
-- `docs/` - project and submission documentation
-
-Expected core asset paths:
-
-- `assets/blender/station.blend`
-- `assets/models/station.glb`
+- `index.html` - application entry point
+- `src/` - Three.js runtime logic
+- `assets/models/` - runtime GLB models
+- `assets/blender/` - Blender source files
+- `assets/icons/controls/` - control SVG icons and icon license notes
+- `docs/` - project documentation and report output
 
 ## Academic Integrity
 
-Projects must be individually produced. Submissions that appear too similar may be awarded zero.
+This project was individually produced. The full commit history can be found here: https://github.com/gwejones/cos3712-assignments/commits/main/.
