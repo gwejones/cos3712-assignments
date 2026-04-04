@@ -11,6 +11,8 @@ These SVGs were sourced from [Google Material Symbols](https://fonts.google.com/
 | `move-right` | `move-right.svg` | `keyboard_arrow_right` |
 | `move-up` | `move-up.svg` | `keyboard_arrow_up` |
 | `move-down` | `move-down.svg` | `keyboard_arrow_down` |
+| `move-forward` | `move-forward.svg` | `arrow_warm_up` |
+| `move-backward` | `move-backward.svg` | `arrow_cool_down` |
 | `pan-left` | `pan-left.svg` | `rotate_left` |
 | `pan-right` | `pan-right.svg` | `rotate_right` |
 | `tilt-up` | `tilt-up.svg` | `arrows_more_up` |

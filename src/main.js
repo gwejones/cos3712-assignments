@@ -72,6 +72,8 @@ const moveLeftButton = document.getElementById("move-left");
 const moveRightButton = document.getElementById("move-right");
 const moveUpButton = document.getElementById("move-up");
 const moveDownButton = document.getElementById("move-down");
+const moveForwardButton = document.getElementById("move-forward");
+const moveBackwardButton = document.getElementById("move-backward");
 const toggleOrbitIcon = document.getElementById("toggle-orbit-icon");
 
 const pauseOrbitIconSrc = "./assets/icons/controls/pause-orbit.svg";
@@ -139,6 +141,16 @@ if (moveUpButton instanceof HTMLButtonElement) {
 if (moveDownButton instanceof HTMLButtonElement) {
   moveDownButton.addEventListener("click", () => {
     moveCamera(0, -moveStep, 0);
+  });
+}
+if (moveForwardButton instanceof HTMLButtonElement) {
+  moveForwardButton.addEventListener("click", () => {
+    moveCamera(0, 0, moveStep);
+  });
+}
+if (moveBackwardButton instanceof HTMLButtonElement) {
+  moveBackwardButton.addEventListener("click", () => {
+    moveCamera(0, 0, -moveStep);
   });
 }
 
