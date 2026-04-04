@@ -69,28 +69,17 @@ To verify all required functionailty, see the deployed live project at https://g
 
 ### Proof of successful local run / compilation context
 
-- `[PLACEHOLDER] Screenshot of terminal running: python3 -m http.server 8000`
-- `[PLACEHOLDER] Screenshot of app running at http://localhost:8000/`
+#### Page hosting
 
-### Station structure proof
+This project does not require compilation, as it is written in plain Javascript. The project was successfully hosted locally using the `http.server` Python module.
 
-- `[PLACEHOLDER] External view showing full station layout`
-- `[PLACEHOLDER] Close-up showing docking modules`
-- `[PLACEHOLDER] Close-up showing solar arrays and communication towers`
+![locally hosting](./docs/screenshots/hosting_locally.png)
 
-### Animation proof
+#### Page rendering in browser
 
-- `[PLACEHOLDER] Frame or sequence showing station rotation`
-- `[PLACEHOLDER] Frame or sequence showing at least four orbiting ships`
-- `[PLACEHOLDER] Before/after or sequence showing Pause Orbit and Resume Orbit`
+After hosting, the site could be opened in a web broswer and rendered properly.
 
-### Camera and controls proof
-
-- `[PLACEHOLDER] Free camera movement (move/pan/tilt)`
-- `[PLACEHOLDER] Zoom in/out behavior`
-- `[PLACEHOLDER] Switch Camera in free view`
-- `[PLACEHOLDER] First-person ship view`
-- `[PLACEHOLDER] Reset Camera returning to default`
+![page rendering](./docs/screenshots/page_render.png)
 
 ## Third-Party Assets and Licenses
 
@@ -121,6 +110,8 @@ pandoc README.md \
   --toc \
   --number-sections \
   --standalone \
+  -V papersize:a4 \
+  -V geometry:margin=15mm \
   -o docs/COS3712_Part1_Documentation.pdf
 ```
 
