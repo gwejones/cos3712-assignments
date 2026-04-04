@@ -31,6 +31,9 @@ scene.add(sun);
 const stationRoot = new THREE.Group();
 scene.add(stationRoot);
 
+const shipsRoot = new THREE.Group();
+scene.add(shipsRoot);
+
 const modelLoader = new GLTFLoader();
 modelLoader.register(() => ({
   name: "ForceFlatShading",
@@ -51,8 +54,66 @@ modelLoader.load(
   }
 );
 
+const shipConfigs = [
+  {
+    radius: 6,
+    inclination: THREE.MathUtils.degToRad(10),
+    speed: 0.2,
+    phase: 0
+  },
+  {
+    radius: 6,
+    inclination: THREE.MathUtils.degToRad(10),
+    speed: 0.2,
+    phase: Math.PI
+  },
+  {
+    radius: 6,
+    inclination: THREE.MathUtils.degToRad(-10),
+    speed: 0.2,
+    phase: Math.PI * 0.5
+  },
+  {
+    radius: 6,
+    inclination: THREE.MathUtils.degToRad(-10),
+    speed: 0.2,
+    phase: Math.PI * 1.5
+  }
+];
+
+const ships = [];
+modelLoader.load(
+  "./assets/models/ship.glb",
+  (gltf) => {
+    for (const config of shipConfigs) {
+      const shipMesh = gltf.scene.clone(true);
+      const shipOrbitNode = new THREE.Group();
+      shipOrbitNode.add(shipMesh);
+      shipOrbitNode.scale.setScalar(0.20);
+      // Ship mesh points +X (nose). lookAt aligns +Z, so pre-rotate mesh once.
+      shipMesh.rotation.y = -Math.PI * 0.5;
+      shipsRoot.add(shipOrbitNode);
+
+      ships.push({
+        orbitNode: shipOrbitNode,
+        mesh: shipMesh,
+        radius: config.radius,
+        inclination: config.inclination,
+        speed: config.speed,
+        phase: config.phase
+      });
+    }
+  },
+  undefined,
+  (error) => {
+    console.error("Could not load ./assets/models/ship.glb.", error);
+  }
+);
+
 const timer = new THREE.Timer();
 timer.connect(document);
+const orbitPosition = new THREE.Vector3();
+const orbitLookAhead = new THREE.Vector3();
 
 function animate(timestamp) {
   requestAnimationFrame(animate);
@@ -60,6 +121,15 @@ function animate(timestamp) {
 
   const t = timer.getElapsed();
   stationRoot.rotation.y = t * 0.02;
+
+  for (const ship of ships) {
+    const theta = t * ship.speed + ship.phase;
+    computeOrbitalPosition(theta, ship.radius, ship.inclination, orbitPosition);
+    ship.orbitNode.position.copy(orbitPosition);
+    const nextTheta = theta + 0.01;
+    computeOrbitalPosition(nextTheta, ship.radius, ship.inclination, orbitLookAhead);
+    ship.orbitNode.lookAt(orbitLookAhead);
+  }
 
   renderer.render(scene, camera);
 }
@@ -77,3 +147,17 @@ window.addEventListener("resize", () => {
 window.addEventListener("beforeunload", () => {
   timer.dispose();
 });
+
+function computeOrbitalPosition(theta, radius, inclination, target) {
+  const x = radius * Math.cos(theta);
+  const z = radius * Math.sin(theta);
+
+  const sinI = Math.sin(inclination);
+  const cosI = Math.cos(inclination);
+
+  target.set(
+    x,
+    -z * sinI,
+    z * cosI
+  );
+}
