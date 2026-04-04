@@ -5,6 +5,7 @@ These SVGs were sourced from [Google Material Symbols](https://fonts.google.com/
 | Button ID | Local SVG | Material Icon Name |
 | --- | --- | --- |
 | `reset-camera` | `reset-camera.svg` | `panorama_wide_angle` |
+| `cycle-view` | `switch-camera.svg` | `switch_camera` |
 | `zoom-in` | `zoom-in.svg` | `zoom_in` |
 | `zoom-out` | `zoom-out.svg` | `zoom_out` |
 | `move-left` | `move-left.svg` | `keyboard_arrow_left` |

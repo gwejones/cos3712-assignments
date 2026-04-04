@@ -18,6 +18,8 @@ const camera = new THREE.PerspectiveCamera(
 );
 const defaultLookAtTarget = new THREE.Vector3(0, 0, 0);
 const defaultCameraPosition = new THREE.Vector3(0, 2, 8);
+const shipViewOffset = new THREE.Vector3(0, 0.8, -1);
+const shipViewFov = 60;
 const yawStep = THREE.MathUtils.degToRad(8);
 const pitchStep = THREE.MathUtils.degToRad(6);
 const zoomStep = 4;
@@ -27,6 +29,7 @@ const maxPitch = THREE.MathUtils.degToRad(89);
 const minCameraFov = 20;
 const maxCameraFov = 90;
 const worldUp = new THREE.Vector3(0, 1, 0);
+const shipViewFacingFix = new THREE.Quaternion().setFromAxisAngle(worldUp, Math.PI);
 const cameraForward = new THREE.Vector3();
 const cameraRight = new THREE.Vector3();
 const targetCameraPosition = new THREE.Vector3();
@@ -41,8 +44,14 @@ const cameraPositionSnapEpsilonSq = 0.000001;
 const cameraRotationSnapDotEpsilon = 0.000001;
 const cameraFovSnapEpsilon = 0.001;
 let targetCameraFov = defaultCameraFov;
+let viewIndex = 0; // 0 = free camera, 1..N = ship first-person views
+const savedFreeCameraPosition = new THREE.Vector3();
+let savedFreeCameraYaw = 0;
+let savedFreeCameraPitch = 0;
+let savedFreeCameraFov = defaultCameraFov;
 camera.rotation.order = "YXZ";
 setCameraView(defaultCameraPosition, defaultLookAtTarget, true);
+saveFreeCameraState();
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -59,9 +68,11 @@ scene.add(stationRoot);
 
 const shipsRoot = new THREE.Group();
 scene.add(shipsRoot);
+const ships = [];
 
 const toggleOrbitButton = document.getElementById("toggle-orbit");
 const resetCameraButton = document.getElementById("reset-camera");
+const cycleViewButton = document.getElementById("cycle-view");
 const panLeftButton = document.getElementById("pan-left");
 const panRightButton = document.getElementById("pan-right");
 const tiltUpButton = document.getElementById("tilt-up");
@@ -89,67 +100,112 @@ if (toggleOrbitButton instanceof HTMLButtonElement) {
 }
 if (resetCameraButton instanceof HTMLButtonElement) {
   resetCameraButton.addEventListener("click", () => {
+    viewIndex = 0;
     setCameraView(defaultCameraPosition, defaultLookAtTarget);
     setTargetCameraFov(defaultCameraFov);
+    saveFreeCameraState();
+    syncCycleViewButton();
+  });
+}
+if (cycleViewButton instanceof HTMLButtonElement) {
+  syncCycleViewButton();
+  cycleViewButton.addEventListener("click", () => {
+    cycleCameraView();
   });
 }
 if (panLeftButton instanceof HTMLButtonElement) {
   panLeftButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     rotateCamera(yawStep, 0);
   });
 }
 if (panRightButton instanceof HTMLButtonElement) {
   panRightButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     rotateCamera(-yawStep, 0);
   });
 }
 if (tiltUpButton instanceof HTMLButtonElement) {
   tiltUpButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     rotateCamera(0, pitchStep);
   });
 }
 if (tiltDownButton instanceof HTMLButtonElement) {
   tiltDownButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     rotateCamera(0, -pitchStep);
   });
 }
 if (zoomInButton instanceof HTMLButtonElement) {
   zoomInButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     zoomCamera(-zoomStep);
   });
 }
 if (zoomOutButton instanceof HTMLButtonElement) {
   zoomOutButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     zoomCamera(zoomStep);
   });
 }
 if (moveLeftButton instanceof HTMLButtonElement) {
   moveLeftButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     moveCamera(-moveStep, 0, 0);
   });
 }
 if (moveRightButton instanceof HTMLButtonElement) {
   moveRightButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     moveCamera(moveStep, 0, 0);
   });
 }
 if (moveUpButton instanceof HTMLButtonElement) {
   moveUpButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     moveCamera(0, moveStep, 0);
   });
 }
 if (moveDownButton instanceof HTMLButtonElement) {
   moveDownButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     moveCamera(0, -moveStep, 0);
   });
 }
 if (moveForwardButton instanceof HTMLButtonElement) {
   moveForwardButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     moveCamera(0, 0, moveStep);
   });
 }
 if (moveBackwardButton instanceof HTMLButtonElement) {
   moveBackwardButton.addEventListener("click", () => {
+    if (!isFreeCameraView()) {
+      return;
+    }
     moveCamera(0, 0, -moveStep);
   });
 }
@@ -201,7 +257,6 @@ const shipConfigs = [
   }
 ];
 
-const ships = [];
 modelLoader.load(
   "./assets/models/ship.glb",
   (gltf) => {
@@ -223,6 +278,7 @@ modelLoader.load(
         phase: config.phase
       });
     }
+    syncCycleViewButton();
   },
   undefined,
   (error) => {
@@ -258,6 +314,9 @@ function animate(timestamp) {
     ship.orbitNode.lookAt(orbitLookAhead);
   }
 
+  if (!isFreeCameraView()) {
+    setShipViewTarget();
+  }
   updateCameraTransform(deltaSeconds);
   renderer.render(scene, camera);
 }
@@ -338,6 +397,67 @@ function setTargetCameraFov(nextFov) {
   targetCameraFov = THREE.MathUtils.clamp(nextFov, minCameraFov, maxCameraFov);
 }
 
+function isFreeCameraView() {
+  return viewIndex === 0;
+}
+
+function saveFreeCameraState() {
+  savedFreeCameraPosition.copy(targetCameraPosition);
+  savedFreeCameraYaw = targetCameraYaw;
+  savedFreeCameraPitch = targetCameraPitch;
+  savedFreeCameraFov = targetCameraFov;
+}
+
+function restoreFreeCameraState() {
+  targetCameraPosition.copy(savedFreeCameraPosition);
+  targetCameraYaw = savedFreeCameraYaw;
+  targetCameraPitch = savedFreeCameraPitch;
+  updateTargetCameraQuaternion();
+  setTargetCameraFov(savedFreeCameraFov);
+}
+
+function cycleCameraView() {
+  if (isFreeCameraView()) {
+    saveFreeCameraState();
+  }
+
+  viewIndex += 1;
+  if (viewIndex > ships.length) {
+    viewIndex = 0;
+  }
+
+  if (isFreeCameraView()) {
+    restoreFreeCameraState();
+  } else {
+    setShipViewTarget();
+  }
+
+  syncCycleViewButton();
+}
+
+function setShipViewTarget() {
+  const shipIndex = viewIndex - 1;
+  const ship = ships[shipIndex];
+  if (!ship) {
+    viewIndex = 0;
+    restoreFreeCameraState();
+    syncCycleViewButton();
+    return;
+  }
+
+  ship.orbitNode.updateWorldMatrix(true, false);
+  targetCameraPosition.copy(shipViewOffset).applyMatrix4(ship.orbitNode.matrixWorld);
+
+  ship.orbitNode.getWorldQuaternion(targetCameraQuaternion);
+  // Mesh/object forward is +Z while camera forward is -Z, so apply 180 deg yaw for first-person view.
+  targetCameraQuaternion.multiply(shipViewFacingFix);
+  targetCameraEuler.setFromQuaternion(targetCameraQuaternion, "YXZ");
+  targetCameraPitch = THREE.MathUtils.clamp(targetCameraEuler.x, minPitch, maxPitch);
+  targetCameraYaw = targetCameraEuler.y;
+  updateTargetCameraQuaternion();
+  setTargetCameraFov(shipViewFov);
+}
+
 function updateTargetCameraQuaternion() {
   targetCameraEuler.set(targetCameraPitch, targetCameraYaw, 0, "YXZ");
   targetCameraQuaternion.setFromEuler(targetCameraEuler);
@@ -385,4 +505,22 @@ function syncOrbitToggleButton() {
   if (toggleOrbitIcon instanceof HTMLImageElement) {
     toggleOrbitIcon.src = orbitIsRunning ? pauseOrbitIconSrc : resumeOrbitIconSrc;
   }
+}
+
+function syncCycleViewButton() {
+  if (!(cycleViewButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const freeView = isFreeCameraView();
+
+  let label = "Switch Camera";
+  if (freeView) {
+    label = "Switch Camera (Free View)";
+  } else {
+    label = `Switch Camera (Ship ${viewIndex} View)`;
+  }
+
+  cycleViewButton.setAttribute("aria-label", label);
+  cycleViewButton.title = label;
 }
