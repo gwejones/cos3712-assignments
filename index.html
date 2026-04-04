@@ -44,12 +44,45 @@
         opacity: 0.9;
         line-height: 1.2;
       }
+
+      #controls-overlay {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .control-button {
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        padding: 0;
+        background: #2a2f36;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.1;
+        cursor: pointer;
+      }
+
     </style>
   </head>
   <body>
     <div id="title-overlay">
       <h1>COS3712 Space Station - Part 1</h1>
       <p>50052578 Jones GWE</p>
+    </div>
+    <div id="controls-overlay" aria-label="Scene controls">
+      <button id="toggle-orbit" class="control-button" type="button">Pause Orbit</button>
+      <button id="reset-camera" class="control-button" type="button">Reset Camera</button>
     </div>
     <div id="app"></div>
     <script type="importmap">

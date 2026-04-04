@@ -15,8 +15,10 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   100
 );
-camera.position.set(5, 3, 7);
-camera.lookAt(0, 0, 0);
+const lookAtTarget = new THREE.Vector3(0, 0, 0);
+const defaultCameraPosition = new THREE.Vector3(5, 3, 7);
+camera.position.copy(defaultCameraPosition);
+camera.lookAt(lookAtTarget);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -33,6 +35,22 @@ scene.add(stationRoot);
 
 const shipsRoot = new THREE.Group();
 scene.add(shipsRoot);
+
+const toggleOrbitButton = document.getElementById("toggle-orbit");
+const resetCameraButton = document.getElementById("reset-camera");
+
+let orbitIsRunning = true;
+if (toggleOrbitButton instanceof HTMLButtonElement) {
+  toggleOrbitButton.addEventListener("click", () => {
+    orbitIsRunning = !orbitIsRunning;
+    toggleOrbitButton.textContent = orbitIsRunning ? "Pause Orbit" : "Resume Orbit";
+  });
+}
+if (resetCameraButton instanceof HTMLButtonElement) {
+  resetCameraButton.addEventListener("click", () => {
+    setCameraView(defaultCameraPosition);
+  });
+}
 
 const modelLoader = new GLTFLoader();
 modelLoader.register(() => ({
@@ -110,20 +128,27 @@ modelLoader.load(
   }
 );
 
-const timer = new THREE.Timer();
-timer.connect(document);
 const orbitPosition = new THREE.Vector3();
 const orbitLookAhead = new THREE.Vector3();
+let orbitTime = 0;
+let stationTime = 0;
+let previousFrameMs;
 
 function animate(timestamp) {
   requestAnimationFrame(animate);
-  timer.update(timestamp);
-
-  const t = timer.getElapsed();
-  stationRoot.rotation.y = t * 0.02;
+  if (previousFrameMs === undefined) {
+    previousFrameMs = timestamp;
+  }
+  const deltaSeconds = Math.max(0, (timestamp - previousFrameMs) * 0.001);
+  previousFrameMs = timestamp;
+  stationTime += deltaSeconds;
+  if (orbitIsRunning) {
+    orbitTime += deltaSeconds;
+  }
+  stationRoot.rotation.y = stationTime * 0.02;
 
   for (const ship of ships) {
-    const theta = t * ship.speed + ship.phase;
+    const theta = orbitTime * ship.speed + ship.phase;
     computeOrbitalPosition(theta, ship.radius, ship.inclination, orbitPosition);
     ship.orbitNode.position.copy(orbitPosition);
     const nextTheta = theta + 0.01;
@@ -134,7 +159,7 @@ function animate(timestamp) {
   renderer.render(scene, camera);
 }
 
-animate();
+requestAnimationFrame(animate);
 
 window.addEventListener("resize", () => {
   const width = app.clientWidth;
@@ -142,10 +167,6 @@ window.addEventListener("resize", () => {
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
-});
-
-window.addEventListener("beforeunload", () => {
-  timer.dispose();
 });
 
 function computeOrbitalPosition(theta, radius, inclination, target) {
@@ -160,4 +181,9 @@ function computeOrbitalPosition(theta, radius, inclination, target) {
     -z * sinI,
     z * cosI
   );
+}
+
+function setCameraView(position) {
+  camera.position.copy(position);
+  camera.lookAt(lookAtTarget);
 }
