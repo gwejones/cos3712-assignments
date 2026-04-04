@@ -45,17 +45,17 @@ Open:
 
 Controls are rendered as a right-side vertical overlay in `index.html`.
 
-| Control | Action | Available In |
+| Icon(s) | Action | Available In |
 | --- | --- | --- |
-| `Reset Camera` | Returns to default external view | Free + FP |
-| `Switch Camera` | Cycles: free view -> ship 1 FP -> ship 2 FP -> ... -> free view | Free + FP |
-| `Zoom In`, `Zoom Out` | Changes camera FOV (zoom behavior) | Free view only |
-| `Move Left`, `Move Right` | Lateral camera movement | Free view only |
-| `Move Up`, `Move Down` | Vertical camera movement | Free view only |
-| `Move Forward`, `Move Backward` | Longitudinal camera movement | Free view only |
-| `Pan Left`, `Pan Right` | Yaw camera | Free view only |
-| `Tilt Up`, `Tilt Down` | Pitch camera | Free view only |
-| `Pause Orbit` / `Resume Orbit` | Pause/resume ship orbits | Free + FP |
+| ![Reset Camera](assets/icons/controls/reset-camera.svg) | Returns to default external view | Free + FP |
+| ![Switch Camera](assets/icons/controls/switch-camera.svg) | Cycles: free view -> ship 1 FP -> ship 2 FP -> ... -> free view | Free + FP |
+| ![Zoom In](assets/icons/controls/zoom-in.svg) ![Zoom Out](assets/icons/controls/zoom-out.svg) | Changes camera FOV (zoom behavior) | Free view only |
+| ![Move Left](assets/icons/controls/move-left.svg) ![Move Right](assets/icons/controls/move-right.svg) | Lateral camera movement | Free view only |
+| ![Move Up](assets/icons/controls/move-up.svg) ![Move Down](assets/icons/controls/move-down.svg) | Vertical camera movement | Free view only |
+| ![Move Forward](assets/icons/controls/move-forward.svg) ![Move Backward](assets/icons/controls/move-backward.svg) | Longitudinal camera movement | Free view only |
+| ![Pan Left](assets/icons/controls/pan-left.svg) ![Pan Right](assets/icons/controls/pan-right.svg) | Yaw camera | Free view only |
+| ![Tilt Up](assets/icons/controls/tilt-up.svg) ![Tilt Down](assets/icons/controls/tilt-down.svg) | Pitch camera | Free view only |
+| ![Pause Orbit](assets/icons/controls/pause-orbit.svg) ![Resume Orbit](assets/icons/controls/resume-orbit.svg) | Pause/resume ship orbits | Free + FP |
 
 ## Camera Behavior Notes
 
