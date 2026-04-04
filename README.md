@@ -81,6 +81,10 @@ After hosting, the site could be opened in a web broswer and rendered properly.
 
 ![page rendering](./docs/screenshots/page_render.png)
 
+### Proof of camera controls and working animations
+
+See accompanying video `camera_and_animation.mp4`.
+
 ## Third-Party Assets and Licenses
 
 - Three.js: MIT License
@@ -107,7 +111,6 @@ From repository root:
 ```bash
 pandoc README.md \
   --from gfm \
-  --toc \
   --number-sections \
   --standalone \
   -V papersize:a4 \
