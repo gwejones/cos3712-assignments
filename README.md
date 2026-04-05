@@ -1,8 +1,8 @@
-# COS3712 Interactive 3D Space Station (Part 1)
+# COS3712 Interactive 3D Space Station (Part 1 + Part 2)
 
 Student: 50052578 Jones GWE
 
-This repository contains Assessment 2, Part 1 for COS3712: an interactive 3D space station built with Three.js and Blender assets.
+This repository contains COS3712 Assessment 4 work: an interactive 3D space station built with Three.js and Blender assets.
 
 ## Objectives
 
@@ -20,6 +20,14 @@ Part 1 implementation includes:
 - Perspective camera with free movement controls
 - First-person ship camera view cycling
 - Smooth camera transitions (position, orientation, and FOV interpolation)
+
+## Part 2 Scope
+
+Part 2 implementation focuses on:
+
+- Advanced lighting (directional, point, and spotlight usage)
+- Shading model comparison (Flat, Gouraud, and Phong)
+- Surface-detail mapping (texture, environment, and normal mapping)
 
 ## Technical Stack
 
@@ -67,23 +75,17 @@ Controls are rendered as a right-side vertical overlay in `index.html`.
 
 To verify all required functionailty, see the deployed live project at https://gwejones.github.io/cos3712-assignments/.
 
-### Proof of successful local run / compilation context
+### Proof of lighting implementaion
 
-#### Page hosting
+TODO: add screenshots as proof
 
-This project does not require compilation, as it is written in plain Javascript. The project was successfully hosted locally using the `http.server` Python module.
+### Proof of shading techniques
 
-![locally hosting](./docs/screenshots/hosting_locally.png)
+TODO: add screenshots as proof
 
-#### Page rendering in browser
+### Proof of tecture mapping implementation
 
-After hosting, the site could be opened in a web broswer and rendered properly.
-
-![page rendering](./docs/screenshots/page_render.png)
-
-### Proof of camera controls and working animations
-
-See accompanying video `docs/videos/camera_and_animation.mp4`.
+TODO: add screenshots as proof
 
 ## Third-Party Assets and Licenses
 
@@ -115,7 +117,7 @@ pandoc README.md \
   --standalone \
   -V papersize:a4 \
   -V geometry:margin=15mm \
-  -o docs/COS3712_Part1_Documentation.pdf
+  -o docs/COS3712_Part2_Documentation.pdf
 ```
 
 ## Deployment
@@ -124,7 +126,7 @@ This project is structured for GitHub Pages:
 
 - Publish from `main` branch
 - Folder: repository root (`/`)
-- Live URL: `https://gwejones.github.io/cos3712-assignments/`
+- Live URL: [https://gwejones.github.io/cos3712-assignments/](https://gwejones.github.io/cos3712-assignments/)
 
 ## Repository Structure
 
@@ -137,4 +139,4 @@ This project is structured for GitHub Pages:
 
 ## Academic Integrity
 
-This project was individually produced. The full commit history can be found here: https://github.com/gwejones/cos3712-assignments/commits/main/.
+This project was individually produced. The repository can be found here: [COS3712 Assignments Repository](https://github.com/gwejones/cos3712-assignments/).
