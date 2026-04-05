@@ -45,6 +45,31 @@
         line-height: 1.2;
       }
 
+      #shading-overlay {
+        position: fixed;
+        top: 74px;
+        left: 12px;
+        z-index: 10;
+        width: min(560px, calc(100vw - 96px));
+        max-height: calc(100vh - 96px);
+        padding: 8px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.45);
+        color: #fff;
+        font-family: sans-serif;
+        overflow: auto;
+        pointer-events: auto;
+      }
+
+      #shading-summary {
+        margin: 0;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
       #controls-overlay {
         position: fixed;
         top: 12px;
@@ -91,6 +116,9 @@
     <div id="title-overlay">
       <h1>COS3712 Space Station - Part 2</h1>
       <p>50052578 Jones GWE</p>
+    </div>
+    <div id="shading-overlay">
+      <pre id="shading-summary">Loading shading assignments...</pre>
     </div>
     <div id="controls-overlay" aria-label="Scene controls">
       <button id="reset-camera" class="control-button" type="button" aria-label="Reset Camera" title="Reset Camera">

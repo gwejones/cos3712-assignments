@@ -71,6 +71,19 @@ Controls are rendered as a right-side vertical overlay in `index.html`.
 - First-person orientation is aligned to ship travel direction with axis correction for camera forward (`-Z`) vs object forward (`+Z`).
 - When returning to free view, prior free-view camera state is restored.
 
+## Shading Techniques
+
+Shading assignment is static and resolved from object-name prefixes in the scene graph. If a parent matches a prefix, that technique cascades to all children in that subtree.
+
+### Technique-to-Part Mapping
+
+| Prefix / Part Group | Example Objects | Shading Technique | Three.js Material |
+| --- | --- | --- | --- |
+| `cargo_*` | `cargo_docks` | Flat | `THREE.MeshPhongMaterial` with `flatShading = true` |
+| `mid_*` | `mid_comms_dishes`, `mid_comms_towers`, `mid_dock_struts`, `mid_ring`, `mid_solar_arms`, `mid_solar_booms`, `mid_solar_panels` | Gouraud | `THREE.MeshLambertMaterial` |
+| `core_*` | `core_main`, `core_band_windows` | Phong | `THREE.MeshPhongMaterial` with `flatShading = false` |
+| `ship_*` | `ship_hull_main`, `ship_bridge_hump`, `ship_nacelle_*`, `ship_nose_module`, `ship_cockpit_window`, `ship_side_panel_*` | Phong | `THREE.MeshPhongMaterial` with `flatShading = false` |
+
 ## Documentation Evidence
 
 To verify all required functionailty, see the deployed live project at https://gwejones.github.io/cos3712-assignments/.

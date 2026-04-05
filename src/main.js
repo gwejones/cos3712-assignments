@@ -85,6 +85,7 @@ const moveDownButton = document.getElementById("move-down");
 const moveForwardButton = document.getElementById("move-forward");
 const moveBackwardButton = document.getElementById("move-backward");
 const toggleOrbitIcon = document.getElementById("toggle-orbit-icon");
+const shadingSummaryElement = document.getElementById("shading-summary");
 
 const pauseOrbitIconSrc = "./assets/icons/controls/pause-orbit.svg";
 const resumeOrbitIconSrc = "./assets/icons/controls/resume-orbit.svg";
@@ -210,17 +211,22 @@ if (moveBackwardButton instanceof HTMLButtonElement) {
 }
 
 const modelLoader = new GLTFLoader();
-modelLoader.register(() => ({
-  name: "ForceFlatShading",
-  extendMaterialParams(_materialIndex, materialParams) {
-    materialParams.flatShading = true;
-    return Promise.resolve();
-  }
-}));
+const SHADING_TECHNIQUES = Object.freeze({
+  FLAT: "flat",
+  GOURAUD: "gouraud",
+  PHONG: "phong"
+});
+const shadingAssignments = {
+  flat: [],
+  gouraud: [],
+  phong: []
+};
+updateShadingSummary();
 
 modelLoader.load(
   "./assets/models/station.glb",
   (gltf) => {
+    applyStationShading(gltf.scene);
     stationRoot.add(gltf.scene);
   },
   undefined,
@@ -263,6 +269,7 @@ modelLoader.load(
       const shipMesh = gltf.scene.clone(true);
       const shipOrbitNode = new THREE.Group();
       shipOrbitNode.add(shipMesh);
+      applyShipShading(shipOrbitNode);
       shipOrbitNode.scale.setScalar(0.20);
       // Ship mesh points +X (nose). lookAt aligns +Z, so pre-rotate mesh once.
       shipMesh.rotation.y = -Math.PI * 0.5;
@@ -329,6 +336,134 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
 });
+
+function applyStationShading(root) {
+  applyShadingToHierarchy(root, SHADING_TECHNIQUES.GOURAUD);
+}
+
+function applyShipShading(root) {
+  applyShadingToHierarchy(root, SHADING_TECHNIQUES.PHONG);
+}
+
+function applyShadingToHierarchy(root, fallbackTechnique) {
+  applyShadingToSubtree(root, fallbackTechnique, false);
+
+  updateShadingSummary();
+}
+
+function applyShadingToSubtree(node, inheritedTechnique, parentTechniqueLocked) {
+  const nodeTechnique = parentTechniqueLocked ? null : resolveTechniqueFromNodeName(node.name);
+  const activeTechnique = nodeTechnique || inheritedTechnique;
+  const lockDescendantTechnique = parentTechniqueLocked || nodeTechnique !== null;
+
+  if (node instanceof THREE.Mesh) {
+    node.material = remapMaterial(node.material, activeTechnique);
+    shadingAssignments[activeTechnique].push(buildNodeHierarchyPath(node));
+  }
+
+  for (const child of node.children) {
+    applyShadingToSubtree(child, activeTechnique, lockDescendantTechnique);
+  }
+}
+
+function resolveTechniqueFromNodeName(nodeName) {
+  const objectName = typeof nodeName === "string" ? nodeName.toLowerCase() : "";
+
+  if (objectName.startsWith("cargo_")) {
+    return SHADING_TECHNIQUES.FLAT;
+  }
+  if (objectName.startsWith("mid_")) {
+    return SHADING_TECHNIQUES.GOURAUD;
+  }
+  if (objectName.startsWith("core_") || objectName.startsWith("ship_")) {
+    return SHADING_TECHNIQUES.PHONG;
+  }
+
+  return null;
+}
+
+function buildNodeHierarchyPath(node) {
+  const nameParts = [];
+  let current = node;
+
+  while (current) {
+    if (typeof current.name === "string" && current.name.trim().length > 0) {
+      nameParts.push(current.name);
+    }
+    current = current.parent;
+  }
+
+  if (nameParts.length === 0) {
+    return "<unnamed>";
+  }
+
+  nameParts.reverse();
+  return nameParts.join(" -> ");
+}
+
+function remapMaterial(material, technique) {
+  if (Array.isArray(material)) {
+    return material.map((entry) => createShadingMaterial(entry, technique));
+  }
+  return createShadingMaterial(material, technique);
+}
+
+function createShadingMaterial(sourceMaterial, technique) {
+  if (!(sourceMaterial instanceof THREE.Material)) {
+    return sourceMaterial;
+  }
+
+  let targetMaterial;
+  if (technique === SHADING_TECHNIQUES.GOURAUD) {
+    targetMaterial = new THREE.MeshLambertMaterial();
+  } else {
+    targetMaterial = new THREE.MeshPhongMaterial();
+  }
+
+  // Keep only properties currently used by the project materials.
+  if ("color" in sourceMaterial && sourceMaterial.color && "color" in targetMaterial) {
+    targetMaterial.color.copy(sourceMaterial.color);
+  }
+  targetMaterial.side = sourceMaterial.side;
+  targetMaterial.transparent = sourceMaterial.transparent;
+  targetMaterial.opacity = sourceMaterial.opacity;
+  targetMaterial.visible = sourceMaterial.visible;
+
+  if (targetMaterial instanceof THREE.MeshPhongMaterial) {
+    targetMaterial.flatShading = technique === SHADING_TECHNIQUES.FLAT;
+    targetMaterial.shininess = technique === SHADING_TECHNIQUES.FLAT ? 8 : 30;
+    targetMaterial.specular.set(0x333333);
+  }
+
+  targetMaterial.name = `${sourceMaterial.name || "material"}_${technique}`;
+  targetMaterial.needsUpdate = true;
+  return targetMaterial;
+}
+
+function updateShadingSummary() {
+  if (!(shadingSummaryElement instanceof HTMLElement)) {
+    return;
+  }
+
+  const summaryLines = [
+  ];
+
+  appendTechniqueGroup(summaryLines, SHADING_TECHNIQUES.FLAT);
+  appendTechniqueGroup(summaryLines, SHADING_TECHNIQUES.GOURAUD);
+  appendTechniqueGroup(summaryLines, SHADING_TECHNIQUES.PHONG);
+
+  shadingSummaryElement.textContent = summaryLines.join("\n");
+}
+
+function appendTechniqueGroup(summaryLines, technique) {
+  const assignments = shadingAssignments[technique];
+  summaryLines.push(`${technique} (${assignments.length})`);
+
+  for (const hierarchyPath of assignments) {
+    summaryLines.push(`\t${hierarchyPath}`);
+  }
+  summaryLines.push("");
+}
 
 function computeOrbitalPosition(theta, radius, inclination, target) {
   const x = radius * Math.cos(theta);
