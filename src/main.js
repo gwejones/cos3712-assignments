@@ -86,7 +86,7 @@ const moveForwardButton = document.getElementById("move-forward");
 const moveBackwardButton = document.getElementById("move-backward");
 const toggleShadingModeButton = document.getElementById("toggle-shading-mode");
 const toggleOrbitIcon = document.getElementById("toggle-orbit-icon");
-const shadingSummaryElement = document.getElementById("shading-summary");
+const shadingModeOverlayElement = document.getElementById("shading-mode-overlay");
 
 const pauseOrbitIconSrc = "./assets/icons/controls/pause-orbit.svg";
 const resumeOrbitIconSrc = "./assets/icons/controls/resume-orbit.svg";
@@ -225,18 +225,13 @@ const shadingModeCycle = [
   SHADING_TECHNIQUES.PHONG
 ];
 let shadingMode = SHADING_MODE_ASSIGNED;
-const shadingAssignments = {
-  flat: [],
-  gouraud: [],
-  phong: []
-};
 if (toggleShadingModeButton instanceof HTMLButtonElement) {
   syncShadingModeButton();
   toggleShadingModeButton.addEventListener("click", () => {
     cycleShadingMode();
   });
 }
-updateShadingSummary();
+syncShadingModeOverlay();
 
 modelLoader.load(
   "./assets/models/station.glb",
@@ -352,30 +347,24 @@ window.addEventListener("resize", () => {
   renderer.setSize(width, height);
 });
 
-function applyStationShading(root, refreshSummary = true) {
+function applyStationShading(root) {
   applyShadingToHierarchy(
     root,
     SHADING_TECHNIQUES.GOURAUD,
-    refreshSummary,
     resolveForcedTechniqueFromMode()
   );
 }
 
-function applyShipShading(root, refreshSummary = true) {
+function applyShipShading(root) {
   applyShadingToHierarchy(
     root,
     SHADING_TECHNIQUES.PHONG,
-    refreshSummary,
     resolveForcedTechniqueFromMode()
   );
 }
 
-function applyShadingToHierarchy(root, fallbackTechnique, refreshSummary = true, forcedTechnique = null) {
+function applyShadingToHierarchy(root, fallbackTechnique, forcedTechnique = null) {
   applyShadingToSubtree(root, fallbackTechnique, false, forcedTechnique);
-
-  if (refreshSummary) {
-    updateShadingSummary();
-  }
 }
 
 function applyShadingToSubtree(node, inheritedTechnique, parentTechniqueLocked, forcedTechnique) {
@@ -387,7 +376,6 @@ function applyShadingToSubtree(node, inheritedTechnique, parentTechniqueLocked, 
 
   if (node instanceof THREE.Mesh) {
     node.material = remapMaterial(node.material, activeTechnique);
-    shadingAssignments[activeTechnique].push(buildNodeHierarchyPath(node));
   }
 
   for (const child of node.children) {
@@ -409,25 +397,6 @@ function resolveTechniqueFromNodeName(nodeName) {
   }
 
   return null;
-}
-
-function buildNodeHierarchyPath(node) {
-  const nameParts = [];
-  let current = node;
-
-  while (current) {
-    if (typeof current.name === "string" && current.name.trim().length > 0) {
-      nameParts.push(current.name);
-    }
-    current = current.parent;
-  }
-
-  if (nameParts.length === 0) {
-    return "<unnamed>";
-  }
-
-  nameParts.reverse();
-  return nameParts.join(" -> ");
 }
 
 function remapMaterial(material, technique) {
@@ -469,52 +438,18 @@ function createShadingMaterial(sourceMaterial, technique) {
   return targetMaterial;
 }
 
-function updateShadingSummary() {
-  if (!(shadingSummaryElement instanceof HTMLElement)) {
-    return;
-  }
-
-  const summaryLines = [
-    `shading mode: ${shadingMode}`,
-    ""
-  ];
-
-  appendTechniqueGroup(summaryLines, SHADING_TECHNIQUES.FLAT);
-  appendTechniqueGroup(summaryLines, SHADING_TECHNIQUES.GOURAUD);
-  appendTechniqueGroup(summaryLines, SHADING_TECHNIQUES.PHONG);
-
-  shadingSummaryElement.textContent = summaryLines.join("\n");
-}
-
-function appendTechniqueGroup(summaryLines, technique) {
-  const assignments = shadingAssignments[technique];
-  summaryLines.push(`${technique} (${assignments.length})`);
-
-  for (const hierarchyPath of assignments) {
-    summaryLines.push(`- ${hierarchyPath}`);
-  }
-  summaryLines.push("");
-}
-
 function cycleShadingMode() {
   const currentIndex = shadingModeCycle.indexOf(shadingMode);
   const nextIndex = (currentIndex + 1) % shadingModeCycle.length;
   shadingMode = shadingModeCycle[nextIndex];
   applyCurrentShading();
   syncShadingModeButton();
+  syncShadingModeOverlay();
 }
 
 function applyCurrentShading() {
-  clearShadingAssignments();
-  applyStationShading(stationRoot, false);
-  applyShipShading(shipsRoot, false);
-  updateShadingSummary();
-}
-
-function clearShadingAssignments() {
-  shadingAssignments.flat.length = 0;
-  shadingAssignments.gouraud.length = 0;
-  shadingAssignments.phong.length = 0;
+  applyStationShading(stationRoot);
+  applyShipShading(shipsRoot);
 }
 
 function resolveForcedTechniqueFromMode() {
@@ -532,6 +467,14 @@ function syncShadingModeButton() {
   const label = `Shading Mode (${shadingMode})`;
   toggleShadingModeButton.setAttribute("aria-label", label);
   toggleShadingModeButton.title = `${label}`;
+}
+
+function syncShadingModeOverlay() {
+  if (!(shadingModeOverlayElement instanceof HTMLElement)) {
+    return;
+  }
+
+  shadingModeOverlayElement.textContent = `shading mode: ${shadingMode}`;
 }
 
 function computeOrbitalPosition(theta, radius, inclination, target) {
