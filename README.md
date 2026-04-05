@@ -83,7 +83,7 @@ After hosting, the site could be opened in a web broswer and rendered properly.
 
 ### Proof of camera controls and working animations
 
-See accompanying video `camera_and_animation.mp4`.
+See accompanying video `docs/videos/camera_and_animation.mp4`.
 
 ## Third-Party Assets and Licenses
 
