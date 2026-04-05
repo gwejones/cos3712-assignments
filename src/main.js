@@ -58,7 +58,7 @@ renderer.setSize(app.clientWidth, app.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 app.appendChild(renderer.domElement);
 
-const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+const sun = new THREE.DirectionalLight(0xffffff, 2.0);
 sun.position.set(6, 8, 4);
 scene.add(sun);
 
@@ -84,6 +84,7 @@ const moveUpButton = document.getElementById("move-up");
 const moveDownButton = document.getElementById("move-down");
 const moveForwardButton = document.getElementById("move-forward");
 const moveBackwardButton = document.getElementById("move-backward");
+const toggleShadingModeButton = document.getElementById("toggle-shading-mode");
 const toggleOrbitIcon = document.getElementById("toggle-orbit-icon");
 const shadingSummaryElement = document.getElementById("shading-summary");
 
@@ -216,11 +217,25 @@ const SHADING_TECHNIQUES = Object.freeze({
   GOURAUD: "gouraud",
   PHONG: "phong"
 });
+const SHADING_MODE_ASSIGNED = "assigned";
+const shadingModeCycle = [
+  SHADING_MODE_ASSIGNED,
+  SHADING_TECHNIQUES.FLAT,
+  SHADING_TECHNIQUES.GOURAUD,
+  SHADING_TECHNIQUES.PHONG
+];
+let shadingMode = SHADING_MODE_ASSIGNED;
 const shadingAssignments = {
   flat: [],
   gouraud: [],
   phong: []
 };
+if (toggleShadingModeButton instanceof HTMLButtonElement) {
+  syncShadingModeButton();
+  toggleShadingModeButton.addEventListener("click", () => {
+    cycleShadingMode();
+  });
+}
 updateShadingSummary();
 
 modelLoader.load(
@@ -337,24 +352,38 @@ window.addEventListener("resize", () => {
   renderer.setSize(width, height);
 });
 
-function applyStationShading(root) {
-  applyShadingToHierarchy(root, SHADING_TECHNIQUES.GOURAUD);
+function applyStationShading(root, refreshSummary = true) {
+  applyShadingToHierarchy(
+    root,
+    SHADING_TECHNIQUES.GOURAUD,
+    refreshSummary,
+    resolveForcedTechniqueFromMode()
+  );
 }
 
-function applyShipShading(root) {
-  applyShadingToHierarchy(root, SHADING_TECHNIQUES.PHONG);
+function applyShipShading(root, refreshSummary = true) {
+  applyShadingToHierarchy(
+    root,
+    SHADING_TECHNIQUES.PHONG,
+    refreshSummary,
+    resolveForcedTechniqueFromMode()
+  );
 }
 
-function applyShadingToHierarchy(root, fallbackTechnique) {
-  applyShadingToSubtree(root, fallbackTechnique, false);
+function applyShadingToHierarchy(root, fallbackTechnique, refreshSummary = true, forcedTechnique = null) {
+  applyShadingToSubtree(root, fallbackTechnique, false, forcedTechnique);
 
-  updateShadingSummary();
+  if (refreshSummary) {
+    updateShadingSummary();
+  }
 }
 
-function applyShadingToSubtree(node, inheritedTechnique, parentTechniqueLocked) {
-  const nodeTechnique = parentTechniqueLocked ? null : resolveTechniqueFromNodeName(node.name);
-  const activeTechnique = nodeTechnique || inheritedTechnique;
-  const lockDescendantTechnique = parentTechniqueLocked || nodeTechnique !== null;
+function applyShadingToSubtree(node, inheritedTechnique, parentTechniqueLocked, forcedTechnique) {
+  const nodeTechnique = forcedTechnique === null && !parentTechniqueLocked
+    ? resolveTechniqueFromNodeName(node.name)
+    : null;
+  const activeTechnique = forcedTechnique || nodeTechnique || inheritedTechnique;
+  const lockDescendantTechnique = forcedTechnique !== null || parentTechniqueLocked || nodeTechnique !== null;
 
   if (node instanceof THREE.Mesh) {
     node.material = remapMaterial(node.material, activeTechnique);
@@ -362,7 +391,7 @@ function applyShadingToSubtree(node, inheritedTechnique, parentTechniqueLocked) 
   }
 
   for (const child of node.children) {
-    applyShadingToSubtree(child, activeTechnique, lockDescendantTechnique);
+    applyShadingToSubtree(child, activeTechnique, lockDescendantTechnique, forcedTechnique);
   }
 }
 
@@ -431,8 +460,8 @@ function createShadingMaterial(sourceMaterial, technique) {
 
   if (targetMaterial instanceof THREE.MeshPhongMaterial) {
     targetMaterial.flatShading = technique === SHADING_TECHNIQUES.FLAT;
-    targetMaterial.shininess = technique === SHADING_TECHNIQUES.FLAT ? 8 : 30;
-    targetMaterial.specular.set(0x333333);
+    targetMaterial.shininess = 30;
+    targetMaterial.specular.set(0x666666);
   }
 
   targetMaterial.name = `${sourceMaterial.name || "material"}_${technique}`;
@@ -446,6 +475,8 @@ function updateShadingSummary() {
   }
 
   const summaryLines = [
+    `shading mode: ${shadingMode}`,
+    ""
   ];
 
   appendTechniqueGroup(summaryLines, SHADING_TECHNIQUES.FLAT);
@@ -460,9 +491,47 @@ function appendTechniqueGroup(summaryLines, technique) {
   summaryLines.push(`${technique} (${assignments.length})`);
 
   for (const hierarchyPath of assignments) {
-    summaryLines.push(`\t${hierarchyPath}`);
+    summaryLines.push(`- ${hierarchyPath}`);
   }
   summaryLines.push("");
+}
+
+function cycleShadingMode() {
+  const currentIndex = shadingModeCycle.indexOf(shadingMode);
+  const nextIndex = (currentIndex + 1) % shadingModeCycle.length;
+  shadingMode = shadingModeCycle[nextIndex];
+  applyCurrentShading();
+  syncShadingModeButton();
+}
+
+function applyCurrentShading() {
+  clearShadingAssignments();
+  applyStationShading(stationRoot, false);
+  applyShipShading(shipsRoot, false);
+  updateShadingSummary();
+}
+
+function clearShadingAssignments() {
+  shadingAssignments.flat.length = 0;
+  shadingAssignments.gouraud.length = 0;
+  shadingAssignments.phong.length = 0;
+}
+
+function resolveForcedTechniqueFromMode() {
+  if (shadingMode === SHADING_MODE_ASSIGNED) {
+    return null;
+  }
+  return shadingMode;
+}
+
+function syncShadingModeButton() {
+  if (!(toggleShadingModeButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const label = `Shading Mode (${shadingMode})`;
+  toggleShadingModeButton.setAttribute("aria-label", label);
+  toggleShadingModeButton.title = `${label}`;
 }
 
 function computeOrbitalPosition(theta, radius, inclination, target) {

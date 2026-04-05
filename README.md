@@ -63,6 +63,7 @@ Controls are rendered as a right-side vertical overlay in `index.html`.
 | ![Move Forward](assets/icons/controls/move-forward.svg) ![Move Backward](assets/icons/controls/move-backward.svg) | Longitudinal camera movement | Free view only |
 | ![Pan Left](assets/icons/controls/pan-left.svg) ![Pan Right](assets/icons/controls/pan-right.svg) | Yaw camera | Free view only |
 | ![Tilt Up](assets/icons/controls/tilt-up.svg) ![Tilt Down](assets/icons/controls/tilt-down.svg) | Pitch camera | Free view only |
+| ![Shading Mode](assets/icons/controls/stroke-partial.svg) | Cycles shading mode: assigned -> flat -> gouraud -> phong | Free + FP |
 | ![Pause Orbit](assets/icons/controls/pause-orbit.svg) ![Resume Orbit](assets/icons/controls/resume-orbit.svg) | Pause/resume ship orbits | Free + FP |
 
 ## Camera Behavior Notes
