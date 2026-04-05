@@ -422,6 +422,16 @@ function createShadingMaterial(sourceMaterial, technique) {
   if ("color" in sourceMaterial && sourceMaterial.color && "color" in targetMaterial) {
     targetMaterial.color.copy(sourceMaterial.color);
   }
+  if ("emissive" in sourceMaterial && sourceMaterial.emissive && "emissive" in targetMaterial) {
+    targetMaterial.emissive.copy(sourceMaterial.emissive);
+  }
+  if (
+    "emissiveIntensity" in sourceMaterial &&
+    typeof sourceMaterial.emissiveIntensity === "number" &&
+    "emissiveIntensity" in targetMaterial
+  ) {
+    targetMaterial.emissiveIntensity = sourceMaterial.emissiveIntensity;
+  }
   targetMaterial.side = sourceMaterial.side;
   targetMaterial.transparent = sourceMaterial.transparent;
   targetMaterial.opacity = sourceMaterial.opacity;
