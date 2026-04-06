@@ -131,21 +131,44 @@ Shading assignment is static and resolved from object-name prefixes in the scene
 | `core_*` | `core_main`, `core_band_windows` | Phong | `THREE.MeshPhongMaterial` with `flatShading = false` |
 | `ship_*` | `ship_hull_main`, `ship_bridge_hump`, `ship_nacelle_*`, `ship_nose_module`, `ship_cockpit_window`, `ship_side_panel_*` | Phong | `THREE.MeshPhongMaterial` with `flatShading = false` |
 
-## Documentation Evidence
+## Mapping Techniques
 
-To verify all required functionailty, see the deployed live project at https://gwejones.github.io/cos3712-assignments/.
+We use texture mapping, environment mapping, and normal mapping.
 
-### Proof of lighting implementaion
+### Texture Mapping
 
-TODO: add screenshots as proof
+- Technique: UV-based image texture mapping (albedo/base-color textures)
+- Where used:
+  - Station core exterior panel/wall surfaces (`core_*`)
+  - Docking-bay walls and docking platform faces (`cargo_*`, selected docking meshes)
+  - Solar panel surfaces (`mid_solar_panels`)
+- Runtime material usage in Three.js:
+  - `MeshLambertMaterial.map` (Gouraud group)
+  - `MeshPhongMaterial.map` (Flat/Phong groups)
+- Textures are authored in Blender and exported through GLB material textures.
 
-### Proof of shading techniques
+**Screenshot Placeholder:** _Insert screenshot showing texture detail on core walls, solar panels, and docking platforms._
+Suggested filename: `docs/screenshots/mapping-texture-panels-walls-docks.png`
 
-TODO: add screenshots as proof
+### Environment Mapping
 
-### Proof of tecture mapping implementation
+TODO: populate after environment mapping is implemented.
 
-TODO: add screenshots as proof
+### Normal Mapping
+
+- Technique: tangent-space normal mapping for fine surface relief
+- Where used:
+  - Station core shell (`core_main`)
+  - Docking module surfaces (`cargo_docks`)
+  - Solar panel surfaces (`mid_solar_panels`)
+- Runtime material usage in Three.js:
+  - `MeshLambertMaterial.normalMap`
+  - `MeshPhongMaterial.normalMap`
+- Normal maps add lighting detail without adding geometry complexity.
+- Current exported GLBs do not include normal maps on ship materials.
+
+**Screenshot Placeholder:** _Insert close-up screenshot showing normal-map relief on core shell, docking modules, or solar panels under directional/spot lighting._
+Suggested filename: `docs/screenshots/mapping-normal-panel-detail.png`
 
 ## Third-Party Assets and Licenses
 

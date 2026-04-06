@@ -527,6 +527,52 @@ function createShadingMaterial(sourceMaterial, technique) {
   ) {
     targetMaterial.emissiveIntensity = sourceMaterial.emissiveIntensity;
   }
+
+  // Preserve texture mapping when remapping GLTF materials to Lambert/Phong.
+  const textureProps = [
+    "map",
+    "alphaMap",
+    "aoMap",
+    "lightMap",
+    "emissiveMap",
+    "normalMap",
+    "bumpMap",
+    "displacementMap",
+    "specularMap",
+    "envMap",
+  ];
+  for (const prop of textureProps) {
+    if (prop in sourceMaterial && sourceMaterial[prop] && prop in targetMaterial) {
+      targetMaterial[prop] = sourceMaterial[prop];
+    }
+  }
+
+  const numericProps = [
+    "aoMapIntensity",
+    "lightMapIntensity",
+    "bumpScale",
+    "displacementScale",
+    "displacementBias",
+    "reflectivity",
+    "refractionRatio",
+  ];
+  for (const prop of numericProps) {
+    if (prop in sourceMaterial && typeof sourceMaterial[prop] === "number" && prop in targetMaterial) {
+      targetMaterial[prop] = sourceMaterial[prop];
+    }
+  }
+  if (
+    "normalScale" in sourceMaterial &&
+    sourceMaterial.normalScale &&
+    "normalScale" in targetMaterial &&
+    targetMaterial.normalScale
+  ) {
+    targetMaterial.normalScale.copy(sourceMaterial.normalScale);
+  }
+  if ("normalMapType" in sourceMaterial && "normalMapType" in targetMaterial) {
+    targetMaterial.normalMapType = sourceMaterial.normalMapType;
+  }
+
   targetMaterial.side = sourceMaterial.side;
   targetMaterial.transparent = sourceMaterial.transparent;
   targetMaterial.opacity = sourceMaterial.opacity;
