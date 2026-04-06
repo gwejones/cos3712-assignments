@@ -72,6 +72,47 @@ Controls are rendered as a right-side vertical overlay in `index.html`.
 - First-person orientation is aligned to ship travel direction with axis correction for camera forward (`-Z`) vs object forward (`+Z`).
 - When returning to free view, prior free-view camera state is restored.
 
+## Lighting Techniques
+
+Lighting is implemented using one runtime-configured directional light plus punctual lights authored in Blender and imported through `station.glb` (`KHR_lights_punctual`).
+
+### Directional Light (Sun)
+
+- Three.js type: `THREE.DirectionalLight`
+- Where used: global scene light (`sun` in `src/main.js`)
+- Purpose: simulates sunlight for broad illumination and specular response across station and ships
+
+**Screenshot Placeholder:** _Insert screenshot showing global sun illumination and broad highlights on station hull surfaces._
+Suggested filename: `docs/screenshots/lighting-directional-sun.png`
+
+### Point Lights (Windows)
+
+- Three.js type: `THREE.PointLight` (from GLB)
+- Where used: station core window bands (`core_window_point_b*`, 32 instances)
+- Purpose: local window glow around the cylindrical core
+
+**Screenshot Placeholder:** _Insert screenshot focusing on core window point-light glow around the mid-core window bands._
+Suggested filename: `docs/screenshots/lighting-point-windows.png`
+
+### Point Lights (Dock Corner Markers)
+
+- Three.js type: `THREE.PointLight` (from GLB)
+- Where used: docking-bay outer-face corner markers (`dock_corner_point_b*_c*`, 24 instances)
+- Purpose: red navigation marker lighting around docking entrances
+
+**Screenshot Placeholder:** _Insert screenshot showing red corner marker point lights on the outer face of one docking bay._
+Suggested filename: `docs/screenshots/lighting-point-dock-corners.png`
+
+### Spotlights (Docking Guidance)
+
+- Three.js type: `THREE.SpotLight` (from GLB)
+- Where used: docking beacon units (`dock_beacon_spot_b*`, 6 instances)
+- Purpose: directional guidance beams for docking cavities
+- Animated at runtime by updating each spotlight target.
+
+**Screenshot Placeholder:** _Insert screenshot showing one docking spotlight beam projected into the docking cavity._
+Suggested filename: `docs/screenshots/lighting-spot-docking-guidance.png`
+
 ## Shading Techniques
 
 Shading assignment is static and resolved from object-name prefixes in the scene graph. If a parent matches a prefix, that technique cascades to all children in that subtree.
