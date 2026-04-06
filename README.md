@@ -152,7 +152,19 @@ Suggested filename: `docs/screenshots/mapping-texture-panels-walls-docks.png`
 
 ### Environment Mapping
 
-TODO: populate after environment mapping is implemented.
+- Technique: HDR environment mapping using a space EXR panorama
+- Where used:
+  - Mid-level reflective station structures (`mid_*`)
+  - Core window band structure (`core_band_windows`)
+  - Ship reflective surfaces (`ship_*`)
+- Runtime material usage in Three.js:
+  - Environment texture loaded via `EXRLoader`
+  - Applied as `scene.environment`
+  - Applied per remapped mesh as `MeshPhongMaterial.envMap` / `MeshLambertMaterial.envMap`
+  - Reflectivity controlled by object-name prefix in `src/main.js`
+
+**Screenshot Placeholder:** _Insert screenshot showing environment reflections on mid-level station and ship metallic surfaces._
+Suggested filename: `docs/screenshots/mapping-environment-reflections.png`
 
 ### Normal Mapping
 
@@ -173,6 +185,8 @@ Suggested filename: `docs/screenshots/mapping-normal-panel-detail.png`
 ## Third-Party Assets and Licenses
 
 - Three.js: MIT License
+- HDR environment texture (`assets/textures/env/night_sky_hdri_1k.exr`): ambientCG `NightSkyHDRI003`, CC0
+  - Source: `https://ambientcg.com/view?id=NightSkyHDRI003`
 - Google Material Symbols SVG icons used for controls: Apache License 2.0
   - Source: `https://fonts.google.com/icons`
   - License reference: `https://www.apache.org/licenses/LICENSE-2.0`

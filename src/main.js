@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
 const app = document.getElementById("app");
 if (!(app instanceof HTMLDivElement)) {
@@ -235,6 +236,14 @@ if (moveBackwardButton instanceof HTMLButtonElement) {
 }
 
 const modelLoader = new GLTFLoader();
+const environmentMapLoader = new EXRLoader();
+const environmentMapPath = "./assets/textures/env/night_sky_hdri_1k.exr";
+let environmentMapTexture = null;
+const reflectiveSurfaceProfiles = Object.freeze([
+  Object.freeze({ prefix: "mid_", reflectivity: 0.30 }),
+  Object.freeze({ prefix: "core_band_windows", reflectivity: 0.30 }),
+  Object.freeze({ prefix: "ship_", reflectivity: 0.30 }),
+]);
 const SHADING_TECHNIQUES = Object.freeze({
   FLAT: "flat",
   GOURAUD: "gouraud",
@@ -264,6 +273,7 @@ if (toggleLightingModeButton instanceof HTMLButtonElement) {
 applyCurrentLightingMode();
 syncLightingModeOverlay();
 syncShadingModeOverlay();
+loadEnvironmentMap();
 
 modelLoader.load(
   "./assets/models/station.glb",
@@ -459,22 +469,37 @@ function applyShipShading(root) {
 }
 
 function applyShadingToHierarchy(root, fallbackTechnique, forcedTechnique = null) {
-  applyShadingToSubtree(root, fallbackTechnique, false, forcedTechnique);
+  applyShadingToSubtree(root, fallbackTechnique, false, forcedTechnique, null);
 }
 
-function applyShadingToSubtree(node, inheritedTechnique, parentTechniqueLocked, forcedTechnique) {
+function applyShadingToSubtree(
+  node,
+  inheritedTechnique,
+  parentTechniqueLocked,
+  forcedTechnique,
+  inheritedReflectivity
+) {
   const nodeTechnique = forcedTechnique === null && !parentTechniqueLocked
     ? resolveTechniqueFromNodeName(node.name)
     : null;
   const activeTechnique = forcedTechnique || nodeTechnique || inheritedTechnique;
   const lockDescendantTechnique = forcedTechnique !== null || parentTechniqueLocked || nodeTechnique !== null;
+  const nodeReflectivity = resolveReflectivityFromNodeName(node.name);
+  const activeReflectivity = nodeReflectivity ?? inheritedReflectivity;
 
   if (node instanceof THREE.Mesh) {
     node.material = remapMaterial(node.material, activeTechnique);
+    applyEnvironmentMapping(node.material, activeReflectivity);
   }
 
   for (const child of node.children) {
-    applyShadingToSubtree(child, activeTechnique, lockDescendantTechnique, forcedTechnique);
+    applyShadingToSubtree(
+      child,
+      activeTechnique,
+      lockDescendantTechnique,
+      forcedTechnique,
+      activeReflectivity
+    );
   }
 }
 
@@ -492,6 +517,74 @@ function resolveTechniqueFromNodeName(nodeName) {
   }
 
   return null;
+}
+
+function resolveReflectivityFromNodeName(nodeName) {
+  const objectName = typeof nodeName === "string" ? nodeName.toLowerCase() : "";
+  for (const profile of reflectiveSurfaceProfiles) {
+    if (objectName.startsWith(profile.prefix)) {
+      return profile.reflectivity;
+    }
+  }
+  return null;
+}
+
+function applyEnvironmentMapping(material, reflectivity) {
+  if (Array.isArray(material)) {
+    for (const entry of material) {
+      applyEnvironmentMapping(entry, reflectivity);
+    }
+    return;
+  }
+
+  if (!(material instanceof THREE.Material) || !("envMap" in material)) {
+    return;
+  }
+
+  const shouldApplyReflection = environmentMapTexture !== null && typeof reflectivity === "number";
+
+  if (!shouldApplyReflection) {
+    if (material.envMap !== null) {
+      material.envMap = null;
+      material.needsUpdate = true;
+    }
+    return;
+  }
+
+  let changed = false;
+  if (material.envMap !== environmentMapTexture) {
+    material.envMap = environmentMapTexture;
+    changed = true;
+  }
+  if ("reflectivity" in material && typeof material.reflectivity === "number") {
+    if (Math.abs(material.reflectivity - reflectivity) > 0.0001) {
+      material.reflectivity = reflectivity;
+      changed = true;
+    }
+  }
+  if ("combine" in material && material.combine !== THREE.MixOperation) {
+    material.combine = THREE.MixOperation;
+    changed = true;
+  }
+  if (changed) {
+    material.needsUpdate = true;
+  }
+}
+
+function loadEnvironmentMap() {
+  environmentMapLoader.load(
+    environmentMapPath,
+    (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      environmentMapTexture = texture;
+      scene.environment = texture;
+      applyCurrentShading();
+    },
+    undefined,
+    (error) => {
+      console.error(`Could not load ${environmentMapPath}.`, error);
+    }
+  );
 }
 
 function remapMaterial(material, technique) {
