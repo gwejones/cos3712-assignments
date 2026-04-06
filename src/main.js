@@ -58,7 +58,25 @@ renderer.setSize(app.clientWidth, app.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 app.appendChild(renderer.domElement);
 
-const sun = new THREE.DirectionalLight(0xffffff, 2.0);
+const LIGHTING_MODES = Object.freeze({
+  DAY: "day",
+  ECLIPSE: "eclipse"
+});
+const sunLightingPresets = Object.freeze({
+  [LIGHTING_MODES.DAY]: Object.freeze({
+    color: 0xffffff,
+    intensity: 2.0,
+  }),
+  [LIGHTING_MODES.ECLIPSE]: Object.freeze({
+    color: 0xa8b4cc,
+    intensity: 0.2,
+  }),
+});
+
+const sun = new THREE.DirectionalLight(
+  sunLightingPresets[LIGHTING_MODES.DAY].color,
+  sunLightingPresets[LIGHTING_MODES.DAY].intensity
+);
 sun.position.set(6, 8, 4);
 scene.add(sun);
 
@@ -85,11 +103,16 @@ const moveDownButton = document.getElementById("move-down");
 const moveForwardButton = document.getElementById("move-forward");
 const moveBackwardButton = document.getElementById("move-backward");
 const toggleShadingModeButton = document.getElementById("toggle-shading-mode");
+const toggleLightingModeButton = document.getElementById("toggle-lighting-mode");
 const toggleOrbitIcon = document.getElementById("toggle-orbit-icon");
+const toggleLightingModeIcon = document.getElementById("toggle-lighting-mode-icon");
+const lightingModeOverlayElement = document.getElementById("lighting-mode-overlay");
 const shadingModeOverlayElement = document.getElementById("shading-mode-overlay");
 
 const pauseOrbitIconSrc = "./assets/icons/controls/pause-orbit.svg";
 const resumeOrbitIconSrc = "./assets/icons/controls/resume-orbit.svg";
+const dayLightingIconSrc = "./assets/icons/controls/sunny.svg";
+const eclipseLightingIconSrc = "./assets/icons/controls/brightness-7.svg";
 
 let orbitIsRunning = true;
 if (toggleOrbitButton instanceof HTMLButtonElement) {
@@ -225,12 +248,21 @@ const shadingModeCycle = [
   SHADING_TECHNIQUES.PHONG
 ];
 let shadingMode = SHADING_MODE_ASSIGNED;
+let lightingMode = LIGHTING_MODES.DAY;
 if (toggleShadingModeButton instanceof HTMLButtonElement) {
   syncShadingModeButton();
   toggleShadingModeButton.addEventListener("click", () => {
     cycleShadingMode();
   });
 }
+if (toggleLightingModeButton instanceof HTMLButtonElement) {
+  syncLightingModeButton();
+  toggleLightingModeButton.addEventListener("click", () => {
+    cycleLightingMode();
+  });
+}
+applyCurrentLightingMode();
+syncLightingModeOverlay();
 syncShadingModeOverlay();
 
 modelLoader.load(
@@ -548,6 +580,52 @@ function syncShadingModeOverlay() {
   }
 
   shadingModeOverlayElement.textContent = `shading mode: ${shadingMode}`;
+}
+
+function cycleLightingMode() {
+  lightingMode = lightingMode === LIGHTING_MODES.DAY
+    ? LIGHTING_MODES.ECLIPSE
+    : LIGHTING_MODES.DAY;
+  applyCurrentLightingMode();
+  syncLightingModeButton();
+  syncLightingModeOverlay();
+}
+
+function applyCurrentLightingMode() {
+  const preset = sunLightingPresets[lightingMode];
+  if (!preset) {
+    return;
+  }
+
+  sun.color.setHex(preset.color);
+  sun.intensity = preset.intensity;
+}
+
+function syncLightingModeButton() {
+  if (!(toggleLightingModeButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const nextLightingMode = lightingMode === LIGHTING_MODES.DAY
+    ? LIGHTING_MODES.ECLIPSE
+    : LIGHTING_MODES.DAY;
+  const label = `Switch to ${nextLightingMode} lighting`;
+  toggleLightingModeButton.setAttribute("aria-label", label);
+  toggleLightingModeButton.title = label;
+
+  if (toggleLightingModeIcon instanceof HTMLImageElement) {
+    toggleLightingModeIcon.src = nextLightingMode === LIGHTING_MODES.DAY
+      ? dayLightingIconSrc
+      : eclipseLightingIconSrc;
+  }
+}
+
+function syncLightingModeOverlay() {
+  if (!(lightingModeOverlayElement instanceof HTMLElement)) {
+    return;
+  }
+
+  lightingModeOverlayElement.textContent = `lighting mode: ${lightingMode}`;
 }
 
 function computeOrbitalPosition(theta, radius, inclination, target) {

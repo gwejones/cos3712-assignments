@@ -64,6 +64,7 @@ Controls are rendered as a right-side vertical overlay in `index.html`.
 | ![Pan Left](assets/icons/controls/pan-left.svg) ![Pan Right](assets/icons/controls/pan-right.svg) | Yaw camera | Free view only |
 | ![Tilt Up](assets/icons/controls/tilt-up.svg) ![Tilt Down](assets/icons/controls/tilt-down.svg) | Pitch camera | Free view only |
 | ![Shading Mode](assets/icons/controls/stroke-partial.svg) | Cycles shading mode: assigned -> flat -> gouraud -> phong | Free + FP |
+| ![Day Lighting](assets/icons/controls/sunny.svg) ![Eclipse Lighting](assets/icons/controls/brightness-7.svg) | Toggles directional sunlight mode: day -> eclipse -> day | Free + FP |
 | ![Pause Orbit](assets/icons/controls/pause-orbit.svg) ![Resume Orbit](assets/icons/controls/resume-orbit.svg) | Pause/resume ship orbits | Free + FP |
 
 ## Camera Behavior Notes
@@ -81,9 +82,13 @@ Lighting is implemented using one runtime-configured directional light plus punc
 - Three.js type: `THREE.DirectionalLight`
 - Where used: global scene light (`sun` in `src/main.js`)
 - Purpose: simulates sunlight for broad illumination and specular response across station and ships
+- Toggle behavior: `day` and `eclipse` modes are switched by the lighting-mode control button
 
 **Screenshot Placeholder:** _Insert screenshot showing global sun illumination and broad highlights on station hull surfaces._
 Suggested filename: `docs/screenshots/lighting-directional-sun.png`
+
+**Screenshot Placeholder:** _Insert screenshot showing eclipse mode (reduced sun intensity and cooler directional light)._
+Suggested filename: `docs/screenshots/lighting-directional-eclipse.png`
 
 ### Point Lights (Windows)
 
