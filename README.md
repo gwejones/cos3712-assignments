@@ -4,6 +4,8 @@ Student: 50052578 Jones GWE
 
 This repository contains COS3712 Assessment 4 work: an interactive 3D space station built with Three.js and Blender assets.
 
+See the live site deployed at [https://gwejones.github.io/cos3712-assignments/](https://gwejones.github.io/cos3712-assignments/).
+
 ## Objectives
 
 - Build a 3D space station using primitives.
@@ -84,39 +86,30 @@ Lighting is implemented using one runtime-configured directional light plus punc
 - Purpose: simulates sunlight for broad illumination and specular response across station and ships
 - Toggle behavior: `day` and `eclipse` modes are switched by the lighting-mode control button
 
-**Screenshot Placeholder:** _Insert screenshot showing global sun illumination and broad highlights on station hull surfaces._
-Suggested filename: `docs/screenshots/lighting-directional-sun.png`
+![Directional sunlight mode](docs/screenshots/lighting-directional-sun.png)
 
-**Screenshot Placeholder:** _Insert screenshot showing eclipse mode (reduced sun intensity and cooler directional light)._
-Suggested filename: `docs/screenshots/lighting-directional-eclipse.png`
+![Directional eclipse mode](docs/screenshots/lighting-directional-eclipse.png)
 
-### Point Lights (Windows)
+### Point Lights
 
 - Three.js type: `THREE.PointLight` (from GLB)
-- Where used: station core window bands (`core_window_point_b*`, 32 instances)
-- Purpose: local window glow around the cylindrical core
+- Where used:
+  - station core window bands (`core_window_point_b*`, 32 instances)
+  - docking-bay outer-face corner markers (`dock_corner_point_b*_c*`, 24 instances)
+- Purpose:
+  - local window glow around the cylindrical core
+  - red navigation marker lighting around docking entrances
 
-**Screenshot Placeholder:** _Insert screenshot focusing on core window point-light glow around the mid-core window bands._
-Suggested filename: `docs/screenshots/lighting-point-windows.png`
-
-### Point Lights (Dock Corner Markers)
-
-- Three.js type: `THREE.PointLight` (from GLB)
-- Where used: docking-bay outer-face corner markers (`dock_corner_point_b*_c*`, 24 instances)
-- Purpose: red navigation marker lighting around docking entrances
-
-**Screenshot Placeholder:** _Insert screenshot showing red corner marker point lights on the outer face of one docking bay._
-Suggested filename: `docs/screenshots/lighting-point-dock-corners.png`
+![Dock corner point lights](docs/screenshots/lighting-point-dock-corners.png)
 
 ### Spotlights (Docking Guidance)
 
 - Three.js type: `THREE.SpotLight` (from GLB)
 - Where used: docking beacon units (`dock_beacon_spot_b*`, 6 instances)
-- Purpose: directional guidance beams for docking cavities
+- Purpose: directional guidance beams for docking bays
 - Animated at runtime by updating each spotlight target.
 
-**Screenshot Placeholder:** _Insert screenshot showing one docking spotlight beam projected into the docking cavity._
-Suggested filename: `docs/screenshots/lighting-spot-docking-guidance.png`
+![Docking guidance spotlight beam](docs/screenshots/lighting-spot-docking-guidance.png)
 
 ## Shading Techniques
 
@@ -124,12 +117,34 @@ Shading assignment is static and resolved from object-name prefixes in the scene
 
 ### Technique-to-Part Mapping
 
-| Prefix / Part Group | Example Objects | Shading Technique | Three.js Material |
-| --- | --- | --- | --- |
-| `cargo_*` | `cargo_docks` | Flat | `THREE.MeshPhongMaterial` with `flatShading = true` |
-| `mid_*` | `mid_comms_dishes`, `mid_comms_towers`, `mid_dock_struts`, `mid_ring`, `mid_solar_arms`, `mid_solar_booms`, `mid_solar_panels` | Gouraud | `THREE.MeshLambertMaterial` |
-| `core_*` | `core_main`, `core_band_windows` | Phong | `THREE.MeshPhongMaterial` with `flatShading = false` |
-| `ship_*` | `ship_hull_main`, `ship_bridge_hump`, `ship_nacelle_*`, `ship_nose_module`, `ship_cockpit_window`, `ship_side_panel_*` | Phong | `THREE.MeshPhongMaterial` with `flatShading = false` |
+| Prefix / Part Group | Shading Technique | Three.js Material |
+| --- | --- | --- |
+| `cargo_*` | Flat | `THREE.MeshPhongMaterial` with `flatShading = true` |
+| `mid_*` | Gouraud | `THREE.MeshLambertMaterial` |
+| `core_*` | Phong | `THREE.MeshPhongMaterial` with `flatShading = false` |
+| `ship_*` | Phong | `THREE.MeshPhongMaterial` with `flatShading = false` |
+
+### Visible Differences Between Shading Techniques
+
+Visible differences are demonstrated from a single fixed overhead station view. During comparison, camera position/orientation and lighting are kept constant, and only the shading mode is changed using the Shading Mode control (`assigned -> flat -> gouraud -> phong`).
+
+#### Flat
+
+Faceted polygon-by-polygon lighting transitions.
+
+![Shading mode flat (overhead view)](docs/screenshots/shading-overhead-flat.png)
+
+#### Gouraud
+
+Smoother interpolation than flat, but softer/less defined highlight behavior on `mid_*` structures.
+
+![Shading mode gouraud (overhead view)](docs/screenshots/shading-overhead-gouraud.png)
+
+#### Phong
+
+Smoothest lighting response with clearer specular highlight definition on `mid_*` and `ship_*` surfaces.
+
+![Shading mode phong (overhead view)](docs/screenshots/shading-overhead-phong.png)
 
 ## Mapping Techniques
 
@@ -147,8 +162,7 @@ We use texture mapping, environment mapping, and normal mapping.
   - `MeshPhongMaterial.map` (Flat/Phong groups)
 - Textures are authored in Blender and exported through GLB material textures.
 
-**Screenshot Placeholder:** _Insert screenshot showing texture detail on core walls, solar panels, and docking platforms._
-Suggested filename: `docs/screenshots/mapping-texture-panels-walls-docks.png`
+![Texture mapping on panels, walls, and docking platforms](docs/screenshots/mapping-texture-panels-walls-docks.png)
 
 ### Environment Mapping
 
@@ -163,8 +177,7 @@ Suggested filename: `docs/screenshots/mapping-texture-panels-walls-docks.png`
   - Applied per remapped mesh as `MeshPhongMaterial.envMap` / `MeshLambertMaterial.envMap`
   - Reflectivity controlled by object-name prefix in `src/main.js`
 
-**Screenshot Placeholder:** _Insert screenshot showing environment reflections on mid-level station and ship metallic surfaces._
-Suggested filename: `docs/screenshots/mapping-environment-reflections.png`
+![Environment mapping reflections on station and ship](docs/screenshots/mapping-environment-reflections.png)
 
 ### Normal Mapping
 
@@ -179,8 +192,7 @@ Suggested filename: `docs/screenshots/mapping-environment-reflections.png`
 - Normal maps add lighting detail without adding geometry complexity.
 - Current exported GLBs do not include normal maps on ship materials.
 
-**Screenshot Placeholder:** _Insert close-up screenshot showing normal-map relief on core shell, docking modules, or solar panels under directional/spot lighting._
-Suggested filename: `docs/screenshots/mapping-normal-panel-detail.png`
+![Normal mapping panel detail](docs/screenshots/mapping-normal-panel-detail.png)
 
 ## Third-Party Assets and Licenses
 
@@ -236,4 +248,4 @@ This project is structured for GitHub Pages:
 
 ## Academic Integrity
 
-This project was individually produced. The repository can be found here: [COS3712 Assignments Repository](https://github.com/gwejones/cos3712-assignments/).
+This project was individually produced. The repository can be found here: [https://github.com/gwejones/cos3712-assignments/](https://github.com/gwejones/cos3712-assignments/).
