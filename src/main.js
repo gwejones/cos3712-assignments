@@ -237,6 +237,7 @@ modelLoader.load(
   "./assets/models/station.glb",
   (gltf) => {
     applyStationShading(gltf.scene);
+    registerDockBeaconBeams(gltf.scene);
     stationRoot.add(gltf.scene);
   },
   undefined,
@@ -304,6 +305,11 @@ modelLoader.load(
 
 const orbitPosition = new THREE.Vector3();
 const orbitLookAhead = new THREE.Vector3();
+const dockBeaconBeams = [];
+const dockBeaconRuntimeTargets = [];
+const dockBeaconRotationAxisY = new THREE.Vector3(0, 1, 0);
+const dockBeaconAngularSpeed = Math.PI;
+const dockBeaconTargetLocal = new THREE.Vector3();
 let orbitTime = 0;
 let stationTime = 0;
 let previousFrameMs;
@@ -320,6 +326,7 @@ function animate(timestamp) {
     orbitTime += deltaSeconds;
   }
   stationRoot.rotation.y = stationTime * 0.02;
+  updateDockBeaconBeams(stationTime);
 
   for (const ship of ships) {
     const theta = orbitTime * ship.speed + ship.phase;
@@ -353,6 +360,62 @@ function applyStationShading(root) {
     SHADING_TECHNIQUES.GOURAUD,
     resolveForcedTechniqueFromMode()
   );
+}
+
+function clearDockBeaconRuntimeTargets() {
+  for (const target of dockBeaconRuntimeTargets) {
+    target.removeFromParent();
+  }
+  dockBeaconRuntimeTargets.length = 0;
+}
+
+function registerDockBeaconBeams(root) {
+  clearDockBeaconRuntimeTargets();
+  dockBeaconBeams.length = 0;
+
+  root.traverse((node) => {
+    if (!(node instanceof THREE.SpotLight)) {
+      return;
+    }
+
+    if (typeof node.name !== "string" || !node.name.startsWith("dock_beacon_spot_b")) {
+      return;
+    }
+
+    const baseTargetLocal = node.target instanceof THREE.Object3D
+      ? node.target.position.clone()
+      : new THREE.Vector3(0, 0, -1);
+    if (baseTargetLocal.lengthSq() < 0.000001) {
+      baseTargetLocal.set(0, 0, -1);
+    }
+
+    const runtimeTarget = new THREE.Object3D();
+    runtimeTarget.name = `${node.name}_runtime_target`;
+    scene.add(runtimeTarget);
+    dockBeaconRuntimeTargets.push(runtimeTarget);
+    node.target = runtimeTarget;
+
+    dockBeaconBeams.push({
+      spotNode: node,
+      baseTargetLocal,
+      runtimeTarget,
+    });
+  });
+}
+
+function updateDockBeaconBeams(elapsedSeconds) {
+  if (dockBeaconBeams.length === 0) {
+    return;
+  }
+
+  const angle = (elapsedSeconds * dockBeaconAngularSpeed) % (Math.PI * 2);
+  for (const beam of dockBeaconBeams) {
+    dockBeaconTargetLocal.copy(beam.baseTargetLocal).applyAxisAngle(dockBeaconRotationAxisY, angle);
+    beam.spotNode.updateWorldMatrix(true, false);
+    beam.spotNode.localToWorld(dockBeaconTargetLocal);
+    beam.runtimeTarget.position.copy(dockBeaconTargetLocal);
+    beam.runtimeTarget.updateMatrixWorld();
+  }
 }
 
 function applyShipShading(root) {
