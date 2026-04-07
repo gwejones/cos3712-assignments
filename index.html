@@ -58,14 +58,12 @@
         font-family: sans-serif;
         font-size: 12px;
         line-height: 1.2;
+        white-space: pre-line;
+        text-align: center;
         pointer-events: none;
       }
 
-      #lighting-mode-overlay {
-        bottom: 46px;
-      }
-
-      #shading-mode-overlay {
+      #mode-overlay {
         bottom: 12px;
       }
 
@@ -116,8 +114,8 @@
       <h1>COS3712 Space Station - Part 2</h1>
       <p>50052578 Jones GWE</p>
     </div>
-    <div id="lighting-mode-overlay" class="mode-overlay" aria-live="polite">lighting mode: day</div>
-    <div id="shading-mode-overlay" class="mode-overlay" aria-live="polite">shading mode: assigned</div>
+    <div id="mode-overlay" class="mode-overlay" aria-live="polite">lighting mode: day
+shading mode: assigned</div>
     <div id="controls-overlay" aria-label="Scene controls">
       <button id="reset-camera" class="control-button" type="button" aria-label="Reset Camera" title="Reset Camera">
         <img class="control-icon" src="./assets/icons/controls/reset-camera.svg" alt="" />

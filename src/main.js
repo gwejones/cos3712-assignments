@@ -107,8 +107,7 @@ const toggleShadingModeButton = document.getElementById("toggle-shading-mode");
 const toggleLightingModeButton = document.getElementById("toggle-lighting-mode");
 const toggleOrbitIcon = document.getElementById("toggle-orbit-icon");
 const toggleLightingModeIcon = document.getElementById("toggle-lighting-mode-icon");
-const lightingModeOverlayElement = document.getElementById("lighting-mode-overlay");
-const shadingModeOverlayElement = document.getElementById("shading-mode-overlay");
+const modeOverlayElement = document.getElementById("mode-overlay");
 
 const pauseOrbitIconSrc = "./assets/icons/controls/pause-orbit.svg";
 const resumeOrbitIconSrc = "./assets/icons/controls/resume-orbit.svg";
@@ -271,8 +270,7 @@ if (toggleLightingModeButton instanceof HTMLButtonElement) {
   });
 }
 applyCurrentLightingMode();
-syncLightingModeOverlay();
-syncShadingModeOverlay();
+syncModeOverlay();
 loadEnvironmentMap();
 
 modelLoader.load(
@@ -688,7 +686,7 @@ function cycleShadingMode() {
   shadingMode = shadingModeCycle[nextIndex];
   applyCurrentShading();
   syncShadingModeButton();
-  syncShadingModeOverlay();
+  syncModeOverlay();
 }
 
 function applyCurrentShading() {
@@ -713,21 +711,13 @@ function syncShadingModeButton() {
   toggleShadingModeButton.title = `${label}`;
 }
 
-function syncShadingModeOverlay() {
-  if (!(shadingModeOverlayElement instanceof HTMLElement)) {
-    return;
-  }
-
-  shadingModeOverlayElement.textContent = `shading mode: ${shadingMode}`;
-}
-
 function cycleLightingMode() {
   lightingMode = lightingMode === LIGHTING_MODES.DAY
     ? LIGHTING_MODES.ECLIPSE
     : LIGHTING_MODES.DAY;
   applyCurrentLightingMode();
   syncLightingModeButton();
-  syncLightingModeOverlay();
+  syncModeOverlay();
 }
 
 function applyCurrentLightingMode() {
@@ -759,12 +749,12 @@ function syncLightingModeButton() {
   }
 }
 
-function syncLightingModeOverlay() {
-  if (!(lightingModeOverlayElement instanceof HTMLElement)) {
+function syncModeOverlay() {
+  if (!(modeOverlayElement instanceof HTMLElement)) {
     return;
   }
 
-  lightingModeOverlayElement.textContent = `lighting mode: ${lightingMode}`;
+  modeOverlayElement.textContent = `lighting mode: ${lightingMode}\nshading mode: ${shadingMode}`;
 }
 
 function computeOrbitalPosition(theta, radius, inclination, target) {
