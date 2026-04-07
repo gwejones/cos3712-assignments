@@ -130,19 +130,25 @@ Visible differences are demonstrated from a single fixed overhead station view. 
 
 #### Flat
 
-Faceted polygon-by-polygon lighting transitions.
+- Principle operation: lighting is evaluated per face using a single geometric surface direction per triangle.
+- Normal processing: one face normal is used across the entire triangle (no smooth interpolation between vertices).
+- Expected visible result: clear faceting and abrupt brightness changes at polygon boundaries.
 
 ![Shading mode flat (overhead view)](docs/screenshots/shading-overhead-flat.png)
 
 #### Gouraud
 
-Smoother interpolation than flat, but softer/less defined highlight behavior on `mid_*` structures.
+- Principle operation: lighting is evaluated at vertices, then vertex lighting values are interpolated across each triangle.
+- Normal processing: vertex normals are used for the vertex-light calculations, and the resulting lit color is interpolated per pixel.
+- Expected visible result: smoother surfaces than flat shading, but highlight/detail definition is softer because lighting itself is not recomputed per pixel.
 
 ![Shading mode gouraud (overhead view)](docs/screenshots/shading-overhead-gouraud.png)
 
 #### Phong
 
-Smoothest lighting response with clearer specular highlight definition on `mid_*` and `ship_*` surfaces.
+- Principle operation: normals are interpolated per pixel and lighting is evaluated per pixel.
+- Normal processing: vertex normals are interpolated over the triangle to produce a per-fragment normal for the lighting equations.
+- Expected visible result: smoothest shading transitions and the clearest specular highlight definition, especially on curved metallic surfaces.
 
 ![Shading mode phong (overhead view)](docs/screenshots/shading-overhead-phong.png)
 
