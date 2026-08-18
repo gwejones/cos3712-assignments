@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
 const app = document.getElementById("app");
 if (!(app instanceof HTMLDivElement)) {
@@ -58,7 +59,25 @@ renderer.setSize(app.clientWidth, app.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 app.appendChild(renderer.domElement);
 
-const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+const LIGHTING_MODES = Object.freeze({
+  DAY: "day",
+  ECLIPSE: "eclipse"
+});
+const sunLightingPresets = Object.freeze({
+  [LIGHTING_MODES.DAY]: Object.freeze({
+    color: 0xffffff,
+    intensity: 2.0,
+  }),
+  [LIGHTING_MODES.ECLIPSE]: Object.freeze({
+    color: 0xa8b4cc,
+    intensity: 0.2,
+  }),
+});
+
+const sun = new THREE.DirectionalLight(
+  sunLightingPresets[LIGHTING_MODES.DAY].color,
+  sunLightingPresets[LIGHTING_MODES.DAY].intensity
+);
 sun.position.set(6, 8, 4);
 scene.add(sun);
 
@@ -84,10 +103,16 @@ const moveUpButton = document.getElementById("move-up");
 const moveDownButton = document.getElementById("move-down");
 const moveForwardButton = document.getElementById("move-forward");
 const moveBackwardButton = document.getElementById("move-backward");
+const toggleShadingModeButton = document.getElementById("toggle-shading-mode");
+const toggleLightingModeButton = document.getElementById("toggle-lighting-mode");
 const toggleOrbitIcon = document.getElementById("toggle-orbit-icon");
+const toggleLightingModeIcon = document.getElementById("toggle-lighting-mode-icon");
+const modeOverlayElement = document.getElementById("mode-overlay");
 
 const pauseOrbitIconSrc = "./assets/icons/controls/pause-orbit.svg";
 const resumeOrbitIconSrc = "./assets/icons/controls/resume-orbit.svg";
+const dayLightingIconSrc = "./assets/icons/controls/sunny.svg";
+const eclipseLightingIconSrc = "./assets/icons/controls/brightness-7.svg";
 
 let orbitIsRunning = true;
 if (toggleOrbitButton instanceof HTMLButtonElement) {
@@ -210,17 +235,49 @@ if (moveBackwardButton instanceof HTMLButtonElement) {
 }
 
 const modelLoader = new GLTFLoader();
-modelLoader.register(() => ({
-  name: "ForceFlatShading",
-  extendMaterialParams(_materialIndex, materialParams) {
-    materialParams.flatShading = true;
-    return Promise.resolve();
-  }
-}));
+const environmentMapLoader = new EXRLoader();
+const environmentMapPath = "./assets/textures/env/night_sky_hdri_1k.exr";
+let environmentMapTexture = null;
+const reflectiveSurfaceProfiles = Object.freeze([
+  Object.freeze({ prefix: "mid_", reflectivity: 0.30 }),
+  Object.freeze({ prefix: "core_band_windows", reflectivity: 0.30 }),
+  Object.freeze({ prefix: "ship_", reflectivity: 0.30 }),
+]);
+const SHADING_TECHNIQUES = Object.freeze({
+  FLAT: "flat",
+  GOURAUD: "gouraud",
+  PHONG: "phong"
+});
+const SHADING_MODE_ASSIGNED = "assigned";
+const shadingModeCycle = [
+  SHADING_MODE_ASSIGNED,
+  SHADING_TECHNIQUES.FLAT,
+  SHADING_TECHNIQUES.GOURAUD,
+  SHADING_TECHNIQUES.PHONG
+];
+let shadingMode = SHADING_MODE_ASSIGNED;
+let lightingMode = LIGHTING_MODES.DAY;
+if (toggleShadingModeButton instanceof HTMLButtonElement) {
+  syncShadingModeButton();
+  toggleShadingModeButton.addEventListener("click", () => {
+    cycleShadingMode();
+  });
+}
+if (toggleLightingModeButton instanceof HTMLButtonElement) {
+  syncLightingModeButton();
+  toggleLightingModeButton.addEventListener("click", () => {
+    cycleLightingMode();
+  });
+}
+applyCurrentLightingMode();
+syncModeOverlay();
+loadEnvironmentMap();
 
 modelLoader.load(
   "./assets/models/station.glb",
   (gltf) => {
+    applyStationShading(gltf.scene);
+    registerDockBeaconBeams(gltf.scene);
     stationRoot.add(gltf.scene);
   },
   undefined,
@@ -263,6 +320,7 @@ modelLoader.load(
       const shipMesh = gltf.scene.clone(true);
       const shipOrbitNode = new THREE.Group();
       shipOrbitNode.add(shipMesh);
+      applyShipShading(shipOrbitNode);
       shipOrbitNode.scale.setScalar(0.20);
       // Ship mesh points +X (nose). lookAt aligns +Z, so pre-rotate mesh once.
       shipMesh.rotation.y = -Math.PI * 0.5;
@@ -287,6 +345,11 @@ modelLoader.load(
 
 const orbitPosition = new THREE.Vector3();
 const orbitLookAhead = new THREE.Vector3();
+const dockBeaconBeams = [];
+const dockBeaconRuntimeTargets = [];
+const dockBeaconRotationAxisY = new THREE.Vector3(0, 1, 0);
+const dockBeaconAngularSpeed = Math.PI;
+const dockBeaconTargetLocal = new THREE.Vector3();
 let orbitTime = 0;
 let stationTime = 0;
 let previousFrameMs;
@@ -303,6 +366,7 @@ function animate(timestamp) {
     orbitTime += deltaSeconds;
   }
   stationRoot.rotation.y = stationTime * 0.02;
+  updateDockBeaconBeams(stationTime);
 
   for (const ship of ships) {
     const theta = orbitTime * ship.speed + ship.phase;
@@ -329,6 +393,369 @@ window.addEventListener("resize", () => {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
 });
+
+function applyStationShading(root) {
+  applyShadingToHierarchy(
+    root,
+    SHADING_TECHNIQUES.GOURAUD,
+    resolveForcedTechniqueFromMode()
+  );
+}
+
+function clearDockBeaconRuntimeTargets() {
+  for (const target of dockBeaconRuntimeTargets) {
+    target.removeFromParent();
+  }
+  dockBeaconRuntimeTargets.length = 0;
+}
+
+function registerDockBeaconBeams(root) {
+  clearDockBeaconRuntimeTargets();
+  dockBeaconBeams.length = 0;
+
+  root.traverse((node) => {
+    if (!(node instanceof THREE.SpotLight)) {
+      return;
+    }
+
+    if (typeof node.name !== "string" || !node.name.startsWith("dock_beacon_spot_b")) {
+      return;
+    }
+
+    const baseTargetLocal = node.target instanceof THREE.Object3D
+      ? node.target.position.clone()
+      : new THREE.Vector3(0, 0, -1);
+    if (baseTargetLocal.lengthSq() < 0.000001) {
+      baseTargetLocal.set(0, 0, -1);
+    }
+
+    const runtimeTarget = new THREE.Object3D();
+    runtimeTarget.name = `${node.name}_runtime_target`;
+    scene.add(runtimeTarget);
+    dockBeaconRuntimeTargets.push(runtimeTarget);
+    node.target = runtimeTarget;
+
+    dockBeaconBeams.push({
+      spotNode: node,
+      baseTargetLocal,
+      runtimeTarget,
+    });
+  });
+}
+
+function updateDockBeaconBeams(elapsedSeconds) {
+  if (dockBeaconBeams.length === 0) {
+    return;
+  }
+
+  const angle = (elapsedSeconds * dockBeaconAngularSpeed) % (Math.PI * 2);
+  for (const beam of dockBeaconBeams) {
+    dockBeaconTargetLocal.copy(beam.baseTargetLocal).applyAxisAngle(dockBeaconRotationAxisY, angle);
+    beam.spotNode.updateWorldMatrix(true, false);
+    beam.spotNode.localToWorld(dockBeaconTargetLocal);
+    beam.runtimeTarget.position.copy(dockBeaconTargetLocal);
+    beam.runtimeTarget.updateMatrixWorld();
+  }
+}
+
+function applyShipShading(root) {
+  applyShadingToHierarchy(
+    root,
+    SHADING_TECHNIQUES.PHONG,
+    resolveForcedTechniqueFromMode()
+  );
+}
+
+function applyShadingToHierarchy(root, fallbackTechnique, forcedTechnique = null) {
+  applyShadingToSubtree(root, fallbackTechnique, false, forcedTechnique, null);
+}
+
+function applyShadingToSubtree(
+  node,
+  inheritedTechnique,
+  parentTechniqueLocked,
+  forcedTechnique,
+  inheritedReflectivity
+) {
+  const nodeTechnique = forcedTechnique === null && !parentTechniqueLocked
+    ? resolveTechniqueFromNodeName(node.name)
+    : null;
+  const activeTechnique = forcedTechnique || nodeTechnique || inheritedTechnique;
+  const lockDescendantTechnique = forcedTechnique !== null || parentTechniqueLocked || nodeTechnique !== null;
+  const nodeReflectivity = resolveReflectivityFromNodeName(node.name);
+  const activeReflectivity = nodeReflectivity ?? inheritedReflectivity;
+
+  if (node instanceof THREE.Mesh) {
+    node.material = remapMaterial(node.material, activeTechnique);
+    applyEnvironmentMapping(node.material, activeReflectivity);
+  }
+
+  for (const child of node.children) {
+    applyShadingToSubtree(
+      child,
+      activeTechnique,
+      lockDescendantTechnique,
+      forcedTechnique,
+      activeReflectivity
+    );
+  }
+}
+
+function resolveTechniqueFromNodeName(nodeName) {
+  const objectName = typeof nodeName === "string" ? nodeName.toLowerCase() : "";
+
+  if (objectName.startsWith("cargo_")) {
+    return SHADING_TECHNIQUES.FLAT;
+  }
+  if (objectName.startsWith("mid_")) {
+    return SHADING_TECHNIQUES.GOURAUD;
+  }
+  if (objectName.startsWith("core_") || objectName.startsWith("ship_")) {
+    return SHADING_TECHNIQUES.PHONG;
+  }
+
+  return null;
+}
+
+function resolveReflectivityFromNodeName(nodeName) {
+  const objectName = typeof nodeName === "string" ? nodeName.toLowerCase() : "";
+  for (const profile of reflectiveSurfaceProfiles) {
+    if (objectName.startsWith(profile.prefix)) {
+      return profile.reflectivity;
+    }
+  }
+  return null;
+}
+
+function applyEnvironmentMapping(material, reflectivity) {
+  if (Array.isArray(material)) {
+    for (const entry of material) {
+      applyEnvironmentMapping(entry, reflectivity);
+    }
+    return;
+  }
+
+  if (!(material instanceof THREE.Material) || !("envMap" in material)) {
+    return;
+  }
+
+  const shouldApplyReflection = environmentMapTexture !== null && typeof reflectivity === "number";
+
+  if (!shouldApplyReflection) {
+    if (material.envMap !== null) {
+      material.envMap = null;
+      material.needsUpdate = true;
+    }
+    return;
+  }
+
+  let changed = false;
+  if (material.envMap !== environmentMapTexture) {
+    material.envMap = environmentMapTexture;
+    changed = true;
+  }
+  if ("reflectivity" in material && typeof material.reflectivity === "number") {
+    if (Math.abs(material.reflectivity - reflectivity) > 0.0001) {
+      material.reflectivity = reflectivity;
+      changed = true;
+    }
+  }
+  if ("combine" in material && material.combine !== THREE.MixOperation) {
+    material.combine = THREE.MixOperation;
+    changed = true;
+  }
+  if (changed) {
+    material.needsUpdate = true;
+  }
+}
+
+function loadEnvironmentMap() {
+  environmentMapLoader.load(
+    environmentMapPath,
+    (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      environmentMapTexture = texture;
+      scene.environment = texture;
+      applyCurrentShading();
+    },
+    undefined,
+    (error) => {
+      console.error(`Could not load ${environmentMapPath}.`, error);
+    }
+  );
+}
+
+function remapMaterial(material, technique) {
+  if (Array.isArray(material)) {
+    return material.map((entry) => createShadingMaterial(entry, technique));
+  }
+  return createShadingMaterial(material, technique);
+}
+
+function createShadingMaterial(sourceMaterial, technique) {
+  if (!(sourceMaterial instanceof THREE.Material)) {
+    return sourceMaterial;
+  }
+
+  let targetMaterial;
+  if (technique === SHADING_TECHNIQUES.GOURAUD) {
+    targetMaterial = new THREE.MeshLambertMaterial();
+  } else {
+    targetMaterial = new THREE.MeshPhongMaterial();
+  }
+
+  // Keep only properties currently used by the project materials.
+  if ("color" in sourceMaterial && sourceMaterial.color && "color" in targetMaterial) {
+    targetMaterial.color.copy(sourceMaterial.color);
+  }
+  if ("emissive" in sourceMaterial && sourceMaterial.emissive && "emissive" in targetMaterial) {
+    targetMaterial.emissive.copy(sourceMaterial.emissive);
+  }
+  if (
+    "emissiveIntensity" in sourceMaterial &&
+    typeof sourceMaterial.emissiveIntensity === "number" &&
+    "emissiveIntensity" in targetMaterial
+  ) {
+    targetMaterial.emissiveIntensity = sourceMaterial.emissiveIntensity;
+  }
+
+  // Preserve texture mapping when remapping GLTF materials to Lambert/Phong.
+  const textureProps = [
+    "map",
+    "alphaMap",
+    "aoMap",
+    "lightMap",
+    "emissiveMap",
+    "normalMap",
+    "bumpMap",
+    "displacementMap",
+    "specularMap",
+    "envMap",
+  ];
+  for (const prop of textureProps) {
+    if (prop in sourceMaterial && sourceMaterial[prop] && prop in targetMaterial) {
+      targetMaterial[prop] = sourceMaterial[prop];
+    }
+  }
+
+  const numericProps = [
+    "aoMapIntensity",
+    "lightMapIntensity",
+    "bumpScale",
+    "displacementScale",
+    "displacementBias",
+    "reflectivity",
+    "refractionRatio",
+  ];
+  for (const prop of numericProps) {
+    if (prop in sourceMaterial && typeof sourceMaterial[prop] === "number" && prop in targetMaterial) {
+      targetMaterial[prop] = sourceMaterial[prop];
+    }
+  }
+  if (
+    "normalScale" in sourceMaterial &&
+    sourceMaterial.normalScale &&
+    "normalScale" in targetMaterial &&
+    targetMaterial.normalScale
+  ) {
+    targetMaterial.normalScale.copy(sourceMaterial.normalScale);
+  }
+  if ("normalMapType" in sourceMaterial && "normalMapType" in targetMaterial) {
+    targetMaterial.normalMapType = sourceMaterial.normalMapType;
+  }
+
+  targetMaterial.side = sourceMaterial.side;
+  targetMaterial.transparent = sourceMaterial.transparent;
+  targetMaterial.opacity = sourceMaterial.opacity;
+  targetMaterial.visible = sourceMaterial.visible;
+
+  if (targetMaterial instanceof THREE.MeshPhongMaterial) {
+    targetMaterial.flatShading = technique === SHADING_TECHNIQUES.FLAT;
+    targetMaterial.shininess = 30;
+    targetMaterial.specular.set(0x666666);
+  }
+
+  targetMaterial.name = `${sourceMaterial.name || "material"}_${technique}`;
+  targetMaterial.needsUpdate = true;
+  return targetMaterial;
+}
+
+function cycleShadingMode() {
+  const currentIndex = shadingModeCycle.indexOf(shadingMode);
+  const nextIndex = (currentIndex + 1) % shadingModeCycle.length;
+  shadingMode = shadingModeCycle[nextIndex];
+  applyCurrentShading();
+  syncShadingModeButton();
+  syncModeOverlay();
+}
+
+function applyCurrentShading() {
+  applyStationShading(stationRoot);
+  applyShipShading(shipsRoot);
+}
+
+function resolveForcedTechniqueFromMode() {
+  if (shadingMode === SHADING_MODE_ASSIGNED) {
+    return null;
+  }
+  return shadingMode;
+}
+
+function syncShadingModeButton() {
+  if (!(toggleShadingModeButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const label = `Shading Mode (${shadingMode})`;
+  toggleShadingModeButton.setAttribute("aria-label", label);
+  toggleShadingModeButton.title = `${label}`;
+}
+
+function cycleLightingMode() {
+  lightingMode = lightingMode === LIGHTING_MODES.DAY
+    ? LIGHTING_MODES.ECLIPSE
+    : LIGHTING_MODES.DAY;
+  applyCurrentLightingMode();
+  syncLightingModeButton();
+  syncModeOverlay();
+}
+
+function applyCurrentLightingMode() {
+  const preset = sunLightingPresets[lightingMode];
+  if (!preset) {
+    return;
+  }
+
+  sun.color.setHex(preset.color);
+  sun.intensity = preset.intensity;
+}
+
+function syncLightingModeButton() {
+  if (!(toggleLightingModeButton instanceof HTMLButtonElement)) {
+    return;
+  }
+
+  const nextLightingMode = lightingMode === LIGHTING_MODES.DAY
+    ? LIGHTING_MODES.ECLIPSE
+    : LIGHTING_MODES.DAY;
+  const label = `Switch to ${nextLightingMode} lighting`;
+  toggleLightingModeButton.setAttribute("aria-label", label);
+  toggleLightingModeButton.title = label;
+
+  if (toggleLightingModeIcon instanceof HTMLImageElement) {
+    toggleLightingModeIcon.src = nextLightingMode === LIGHTING_MODES.DAY
+      ? dayLightingIconSrc
+      : eclipseLightingIconSrc;
+  }
+}
+
+function syncModeOverlay() {
+  if (!(modeOverlayElement instanceof HTMLElement)) {
+    return;
+  }
+
+  modeOverlayElement.textContent = `lighting mode: ${lightingMode}\nshading mode: ${shadingMode}`;
+}
 
 function computeOrbitalPosition(theta, radius, inclination, target) {
   const x = radius * Math.cos(theta);

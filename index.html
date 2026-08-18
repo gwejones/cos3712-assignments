@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>COS3712 Space Station - Part 1</title>
+    <title>COS3712 Space Station</title>
     <style>
       html,
       body {
@@ -45,6 +45,28 @@
         line-height: 1.2;
       }
 
+      .mode-overlay {
+        position: fixed;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.45);
+        color: #fff;
+        font-family: sans-serif;
+        font-size: 12px;
+        line-height: 1.2;
+        white-space: pre-line;
+        text-align: center;
+        pointer-events: none;
+      }
+
+      #mode-overlay {
+        bottom: 12px;
+      }
+
       #controls-overlay {
         position: fixed;
         top: 12px;
@@ -56,8 +78,8 @@
       }
 
       .control-button {
-        width: 52px;
-        height: 52px;
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -89,9 +111,11 @@
   </head>
   <body>
     <div id="title-overlay">
-      <h1>COS3712 Space Station - Part 1</h1>
+      <h1>COS3712 Space Station - Part 2</h1>
       <p>50052578 Jones GWE</p>
     </div>
+    <div id="mode-overlay" class="mode-overlay" aria-live="polite">lighting mode: day
+shading mode: assigned</div>
     <div id="controls-overlay" aria-label="Scene controls">
       <button id="reset-camera" class="control-button" type="button" aria-label="Reset Camera" title="Reset Camera">
         <img class="control-icon" src="./assets/icons/controls/reset-camera.svg" alt="" />
@@ -134,6 +158,12 @@
       </button>
       <button id="tilt-down" class="control-button" type="button" aria-label="Tilt Down" title="Tilt Down">
         <img class="control-icon" src="./assets/icons/controls/tilt-down.svg" alt="" />
+      </button>
+      <button id="toggle-shading-mode" class="control-button" type="button" aria-label="Shading Mode" title="Shading Mode">
+        <img class="control-icon" src="./assets/icons/controls/stroke-partial.svg" alt="" />
+      </button>
+      <button id="toggle-lighting-mode" class="control-button" type="button" aria-label="Switch to eclipse lighting" title="Switch to eclipse lighting">
+        <img id="toggle-lighting-mode-icon" class="control-icon" src="./assets/icons/controls/brightness-7.svg" alt="" />
       </button>
       <button id="toggle-orbit" class="control-button" type="button" aria-label="Pause Orbit" title="Pause Orbit">
         <img id="toggle-orbit-icon" class="control-icon" src="./assets/icons/controls/pause-orbit.svg" alt="" />

@@ -18,8 +18,11 @@ These SVGs were sourced from [Google Material Symbols](https://fonts.google.com/
 | `pan-right` | `pan-right.svg` | `rotate_right` |
 | `tilt-up` | `tilt-up.svg` | `arrows_more_up` |
 | `tilt-down` | `tilt-down.svg` | `arrows_more_down` |
+| `toggle-shading-mode` | `stroke-partial.svg` | `stroke_partial` |
+| `toggle-lighting-mode` | `brightness-7.svg` | `brightness_7` |
+| `toggle-lighting-mode` | `sunny.svg` | `sunny` |
 | `toggle-orbit` | `pause-orbit.svg` | `pause_circle` |
-| `toggle-orbit-resume` | `resume-orbit.svg` | `play_circle` |
+| `toggle-orbit` | `resume-orbit.svg` | `play_circle` |
 
 ## License
 
